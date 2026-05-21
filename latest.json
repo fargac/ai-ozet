@@ -1,36 +1,36 @@
 {
-  "generated_at": "2026-05-21T12:23:42.601Z",
-  "scanned_count": 150,
+  "generated_at": "2026-05-21T17:00:55.777Z",
+  "scanned_count": 120,
   "items": [
     {
-      "category": "Gündem",
-      "title": "Hatay'da Sağanak Hayatı Felç Etti: Köprüler Çöktü, Can Kaybı Var",
-      "desc": "Hatay'da etkili olan şiddetli sağanak yağış nedeniyle köprüler yıkıldı, yollar çöktü, birçok araç sürüklendi. Afette 2 kişi hayatını kaybederken, okullar tatil edildi."
-    },
-    {
       "category": "Siyaset",
-      "title": "Sumud Filosu Aktivistleri Türkiye'ye Dönüyor: Bakan Fidan Açıkladı",
-      "desc": "İsrail tarafından alıkonulan Sumud Filosu aktivistlerinin Türkiye'ye getirilmesi için özel uçak seferleri düzenleneceği Dışişleri Bakanı Hakan Fidan tarafından duyuruldu."
+      "title": "CHP'de 'Mutlak Butlan' Kararı ve Siyasi Gelişmeler",
+      "desc": "Kurultay kararı sonrası Kemal Kılıçdaroğlu'nun genel başkanlığa geri dönmesi beklenirken, Özgür Özel ve Adalet Bakanı Gürlek'ten ilk açıklamalar geldi. Gürsel Tekin'in görevi sona erdi ve CHP MYK olağanüstü toplandı."
+    },
+    {
+      "category": "Dünya",
+      "title": "İsrail'in Alıkoyduğu Sumud Aktivistleri Türkiye'de",
+      "desc": "İsrail tarafından alıkonulan, aralarında 85 Türk vatandaşının da bulunduğu 422 Küresel Sumud Filosu aktivisti, Türkiye'ye ulaştı. Ömer Çelik, aktivistlerin Gazze'deki soykırıma karşı durmak adına bu yolculuğu gerçekleştirdiklerini belirtti."
     },
     {
       "category": "Gündem",
-      "title": "Tokat'ta Sel Uyarısı: 15 Bin Kişi Tahliye Edildi, 9 Kilometrelik Set Çekildi",
-      "desc": "Tokat'ta beklenen şiddetli yağışlar ve taşkın riskine karşı 15 bin kişi tahliye edildi. Kentte 9 kilometrelik dev kayalarla set çekilerek önlem alındı."
+      "title": "Beşiktaş Belediyesi Yolsuzluk Soruşturmasında Yeni Gelişme",
+      "desc": "Beşiktaş Belediyesi'ne yönelik yolsuzluk soruşturması kapsamında 3 kişi hakkında tutuklama talebinde bulunuldu, soruşturma derinleşiyor."
+    },
+    {
+      "category": "Dünya",
+      "title": "Lübnan'da İsrail Saldırıları: Ölü Sayısı 3 Bini Aştı",
+      "desc": "İsrail'in Lübnan'a yönelik saldırıları aralıksız devam ederken, hayatını kaybedenlerin sayısı 3 bini geçti ve bölgedeki insani kriz büyüyor."
     },
     {
       "category": "Gündem",
-      "title": "Dorukhan Büyükışık Dosyası 8 Yıl Sonra Açıldı: 9 İlde Operasyon, 22 Gözaltı",
-      "desc": "Bakan Gürlek'in açıklamasıyla Dorukhan Büyükışık cinayet dosyası 8 yıl sonra yeniden açıldı. 9 ilde eş zamanlı düzenlenen operasyonlarda 22 şüpheli gözaltına alındı."
-    },
-    {
-      "category": "Siyaset",
-      "title": "EFES-2026 Tatbikatı Nefes Kesti: Erdoğan'dan Dünya'ya Barış Mesajı",
-      "desc": "Türkiye'nin ev sahipliğinde gerçekleşen EFES-2026 Tatbikatı'nın gece ve gündüz safhaları başarıyla tamamlandı. Cumhurbaşkanı Erdoğan, Türk ordusunun barış ve huzurun ordusu olduğunu vurguladı."
+      "title": "Ankara ve Hatay'ı Sel Vurdu: Kurtarma Çalışmaları Başladı",
+      "desc": "Şiddetli yağışlar sonrası Ankara'da sel sularına kapılan vatandaşlar sürüklenirken, Hatay'da da yağış etkisini gösterdi. Ekipler, selden etkilenen bölgelerde kurtarma çalışmalarını sürdürüyor."
     },
     {
       "category": "Spor",
-      "title": "TFF'den Süper Lig İçin Yabancı Kuralı Açıklaması: 10+4 Sistemi Resmileşti",
-      "desc": "Türkiye Futbol Federasyonu (TFF), Süper Lig'de 2026/27 sezonundan itibaren geçerli olacak 10+4 yabancı kuralını resmen duyurdu."
+      "title": "Trabzonspor Ziraat Türkiye Kupası Finali'ne Hazır",
+      "desc": "Trabzonspor, Ziraat Türkiye Kupası final maçına TÜMOSAN Konyaspor karşısında hazırlandı. Maçın tarihi, hakemi ve final kafilesi belli oldu."
     }
   ],
   "sources": "16 Farklı Ulusal Kaynak"
