@@ -1,36 +1,36 @@
 {
-  "generated_at": "2026-05-21T20:00:54.706Z",
-  "scanned_count": 120,
+  "generated_at": "2024-05-21T20:42:43.370Z",
+  "scanned_count": 150,
   "items": [
     {
-      "category": "Gündem",
-      "title": "CHP'de 'Mutlak Butlan' Kararı: Kılıçdaroğlu Göreve Geri Döndü",
-      "desc": "Mahkeme, CHP'nin 38. Olağan Kurultayı'nın 'mutlak butlan' ile geçersizliğine hükmederek Kemal Kılıçdaroğlu'nu yeniden genel başkan ilan etti. Karar parti içinde geniş yankı bulurken, Kılıçdaroğlu'na yakın isimlerden ve Özgür Özel'den açıklamalar geldi, parti genel merkezinde gerilim yaşandı."
-    },
-    {
-      "category": "Dünya",
-      "title": "Orta Doğu'da Nükleer Savaş Riski Tırmanıyor: İran ve Rusya Gündemde",
-      "desc": "İran'ın nükleer programı etrafındaki belirsizlik sürerken, Rusya ve Belarus'un ortak nükleer tatbikatları bölgedeki endişeyi artırdı. ABD eski Başkanı Trump'tan Orta Doğu'da nükleer savaş yaşanabileceği yönünde çarpıcı açıklamalar geldi."
-    },
-    {
-      "category": "Ekonomi",
-      "title": "Finansal İstikrar Komitesi, Bakan Şimşek Başkanlığında Toplanacak",
-      "desc": "Türkiye'nin ekonomik gidişatı ve finansal piyasalardaki son durumun değerlendirilmesi amacıyla Finansal İstikrar Komitesi, Hazine ve Maliye Bakanı Mehmet Şimşek başkanlığında toplanacak."
-    },
-    {
-      "category": "Dünya",
-      "title": "Yunanistan Savunma Bakanı Dendias'tan Türkiye'ye Övgü Dolu Sözler",
-      "desc": "Yunanistan Savunma Bakanı Nikos Dendias, Türkiye'nin son dönemdeki başarılarına vurgu yaparak, 'Türkiye başardı ve her türlü takdiri hak ediyor' şeklinde açıklamalarda bulundu. Bu sözler, iki ülke ilişkilerindeki önemli bir gelişme olarak yorumlandı."
+      "category": "Siyaset",
+      "title": "CHP'de 'Mutlak Butlan' Kararı: Liderlik Krizi Derinleşiyor",
+      "desc": "Mahkeme kararıyla CHP'nin kurultay kararı iptal edildi; Kemal Kılıçdaroğlu ve Özgür Özel cephelerinden art arda açıklamalar gelirken, partideki liderlik mücadelesi yeni bir boyut kazandı."
     },
     {
       "category": "Gündem",
+      "title": "Hatay'da Sel Felaketi: Can Kayıpları Yaşanırken, Okullar Tatil Edildi",
+      "desc": "Şiddetli yağışlar sonrası Hatay'da yaşanan sel felaketinde can kayıpları artarken, bir ilçede okullar tatil edildi ve bölgede yaşam olumsuz etkilendi."
+    },
+    {
+      "category": "Gündem",
+      "title": "Prof. Dr. Bektaş'tan Kritik Deprem Uyarısı: İki Şehir İçin 7 Büyüklüğünde Risk",
+      "desc": "Jeoloji uzmanı Prof. Dr. Bektaş, Türkiye'nin iki önemli şehri için 7 büyüklüğünde bir deprem riski bulunduğuna dikkat çekerek kamuoyunu uyardı."
+    },
+    {
+      "category": "Gündem",
+      "title": "Ankara Emniyeti Alarmda: Tüm İzinler İptal Edildi, Personel Göreve Çağrıldı",
+      "desc": "Başkent Ankara'da Emniyet Genel Müdürlüğü'nün tüm personelin izinlerini iptal ederek göreve çağırması, güvenlik birimlerinde olası önemli bir gelişmenin habercisi olarak yorumlandı."
+    },
+    {
+      "category": "Dünya",
       "title": "İsrail'in Alıkoyduğu Sumud Filosu Aktivistleri Türkiye'ye Döndü",
-      "desc": "Gazze'ye insani yardım götürme amacıyla yola çıkan ve İsrail tarafından alıkonulan Sumud Filosu'ndaki 85'i Türk vatandaşı toplam 422 aktivist, Türkiye'ye dönüş yaptı. Aktivistler İstanbul'da coşkuyla karşılandı."
+      "desc": "Gazze'ye insani yardım götürürken İsrail tarafından alıkonulan 85'i Türk, toplam 422 Sumud Filosu aktivisti, diplomatik girişimlerin ardından Türkiye'ye ulaştı."
     },
     {
-      "category": "Gündem",
-      "title": "Ankara Emniyeti'nde Kapsamlı Seferberlik: İzinler İptal Edildi",
-      "desc": "Başkent Ankara Emniyet Müdürlüğü'nde tüm izinlerin iptal edildiği ve personelin göreve çağrıldığı duyuruldu. Bu gelişme, olası bir büyük operasyon ya da güvenlik tehdidine karşı hazırlık olarak değerlendiriliyor."
+      "category": "Spor",
+      "title": "TFF'den Futbolda Yeni Dönem Kararları: Yaz Transfer Dönemi ve Yabancı Kuralı Açıklandı",
+      "desc": "Türkiye Futbol Federasyonu, yaz transfer döneminin başlangıç tarihini ve 2026/27 Süper Lig sezonu için uygulanacak yeni yabancı kuralını resmen duyurdu."
     }
   ],
   "sources": "16 Farklı Ulusal Kaynak"
