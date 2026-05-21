@@ -1,36 +1,36 @@
 {
-  "generated_at": "2026-05-21T21:15:53.070Z",
-  "scanned_count": 150,
+  "generated_at": "2026-05-21T22:00:41.662Z",
+  "scanned_count": 140,
   "items": [
     {
       "category": "Gündem",
-      "title": "CHP'de 'Mutlak Butlan' Kararı Siyasi Gündemi Salladı: Liderlerden İlk Tepkiler",
-      "desc": "CHP içinde büyük tartışmalara yol açan 'mutlak butlan' kararı sonrası, Kemal Kılıçdaroğlu, Özgür Özel, Mansur Yavaş ve Ekrem İmamoğlu'ndan peş peşe açıklamalar geldi. Karar, partinin geleceğine dair önemli soruları beraberinde getirdi."
+      "title": "CHP'de 'Mutlak Butlan' Kararı: Siyasi Gündem Sarsıldı",
+      "desc": "Mahkemenin CHP'deki kongre süreçlerine yönelik \"mutlak butlan\" kararı vermesi, partide büyük yankı uyandırdı. Kemal Kılıçdaroğlu ve Özgür Özel'den karşılıklı açıklamalar gelirken, İmamoğlu, Yavaş, Lütfü Savaş gibi isimler ile Adalet Bakanı ve MHP lideri Bahçeli de karara ilişkin görüşlerini bildirdi."
+    },
+    {
+      "category": "Eğitim",
+      "title": "İstanbul Bilgi Üniversitesi Kapatıldı: Karar Resmi Gazete'de",
+      "desc": "İstanbul Bilgi Üniversitesi'nin faaliyet izni, Resmi Gazete'de yayımlanan karar ile kaldırıldı. Bu gelişme, akademik çevrelerde ve eğitim camiasında geniş çaplı tartışmalara neden oldu."
+    },
+    {
+      "category": "Afet",
+      "title": "Hatay'da Sel Felaketi: Can Kaybı Var, Deprem Uyarısı Endişeyi Artırdı",
+      "desc": "Hatay'da etkili olan şiddetli yağışlar sele dönüştü, 3 kişi yaşamını yitirdi ve okullar tatil edildi. Öte yandan bir profesörün iki büyük şehir için yaptığı 7 büyüklüğünde deprem uyarısı, kamuoyunda endişe yarattı."
     },
     {
       "category": "Dünya",
-      "title": "İsrail'in Alıkoyduğu Sumud Filosu Aktivistleri Türkiye'ye Döndü",
-      "desc": "Gazze'ye insani yardım götürürken İsrail tarafından alıkonulan ve aralarında Türk vatandaşlarının da bulunduğu Sumud filosu aktivistleri, diplomatik girişimlerin ardından İstanbul'a ulaştı."
+      "title": "Hürmüz'de Gerilim Tırmanıyor, Sumud Filosu Aktivistleri Türkiye'de",
+      "desc": "İran'ın deniz gücüyle Hürmüz Boğazı'nda yeni bir gerilim başlarken, İsrail tarafından alıkonulan ve aralarında 85 Türk vatandaşının da bulunduğu 422 Sumud Filosu aktivisti İstanbul'a döndü."
     },
     {
       "category": "Ekonomi",
-      "title": "Türkiye ve Nijerya'dan Madencilikte Stratejik İş Birliği Anlaşması",
-      "desc": "Türkiye ile Nijerya arasında madencilik alanında iş birliğini güçlendirmeye yönelik mutabakat zaptı imzalandı. Anlaşma, iki ülkenin ekonomik ve ticari ilişkilerini yeni bir boyuta taşıyor."
+      "title": "Türkiye ve Nijerya Arasında Madencilikte Stratejik İş Birliği",
+      "desc": "Türkiye ile Nijerya arasında madencilik alanında önemli bir mutabakat zaptı imzalandı. Bakan Bayraktar, anlaşmanın iki ülke arasındaki ekonomik ve ticari ilişkileri güçlendireceğini belirtti."
     },
     {
-      "category": "Gündem",
-      "title": "Hatay'da Sel Felaketi Can Aldı, Uzmanlardan Yeni Deprem Uyarıları",
-      "desc": "Hatay'da şiddetli yağışların neden olduğu sel felaketinde 3 kişi hayatını kaybederken, uzmanlar iki şehir için '7 büyüklüğünde deprem' uyarısında bulunarak kamuoyunu tedbirli olmaya çağırdı."
-    },
-    {
-      "category": "Dünya",
-      "title": "Yunanistan'dan Patriot Krizi İtirafı: 'Türkiye Başarıyı Hak Ediyor'",
-      "desc": "Yunanistan Savunma Bakanı Dendias, Türkiye'nin Patriot krizindeki diplomatik başarısını itiraf ederek 'Türkiye başardı ve her türlü takdiri hak ediyor' dedi. Bu açıklama, bölgesel dengeleri tekrar gündeme getirdi."
-    },
-    {
-      "category": "Ekonomi",
-      "title": "Ekonomide Sıkı Para Politikası ve Enflasyon Endişeleri Gündemde",
-      "desc": "Sıkı para ve yüksek faiz ortamının devam ettiği ekonomide, enflasyon endişeleri tahvil faizlerine yansıyor. Uzmanlar, işletmelerin bu dönemde finansal yönetimlerine özel dikkat göstermesi gerektiğini belirtiyor."
+      "category": "Spor",
+      "title": "Jorge Jesus'tan Fenerbahçe Açıklamaları: Yarım Kalan Hikaye ve Kupa Vurgusu",
+      "desc": "Eski Fenerbahçe Teknik Direktörü Jorge Jesus, yaptığı açıklamalarda sarı-lacivertli kulüple ilgili \"yarım kalan bir hikayeleri olduğunu\" ve Fenerbahçe'ye kupa kazandırdığını belirtti. Bu sözler, Fenerbahçe camiasında geniş yankı buldu."
     }
   ],
   "sources": "16 Farklı Ulusal Kaynak"
