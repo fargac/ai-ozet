@@ -1,36 +1,36 @@
 {
-  "generated_at": "2026-05-21T12:22:59.547Z",
+  "generated_at": "2026-05-21T12:23:42.601Z",
   "scanned_count": 150,
   "items": [
     {
       "category": "Gündem",
-      "title": "Hatay Sel Felaketiyle Boğuşuyor: Can Kaybı ve Altyapı Hasarı Büyüyor",
-      "desc": "Hatay'da şiddetli sağanak yağışlar sele dönüştü; köprüler yıkıldı, araçlar sürüklendi ve can kayıpları yaşandı. Meteoroloji, İstanbul başta olmak üzere birçok bölge için kuvvetli sağanak ve fırtına uyarısını sürdürüyor."
-    },
-    {
-      "category": "Dünya",
-      "title": "İsrail'in Sumud Filosu Müdahalesi Gerilimi Tırmandırdı: Türk Aktivistler Türkiye'ye Dönüyor",
-      "desc": "Gazze'ye yardım taşıyan Sumud Filosu'na İsrail'in müdahalesi ve aktivistlerin alıkonulması Türkiye'de sert tepkiyle karşılandı. Dışişleri Bakanı Hakan Fidan, Türk vatandaşlarının özel uçaklarla ülkeye getirileceğini bildirdi."
-    },
-    {
-      "category": "Gündem",
-      "title": "8 Yıl Sonra Yeniden Açılan Dorukhan Büyükışık Dosyasında 22 Gözaltı",
-      "desc": "Bakan Gürlek'in açıklamasıyla 8 yıl sonra yeniden açılan Dorukhan Büyükışık dosyasında, 9 ilde eş zamanlı düzenlenen operasyonlarda 22 şüpheli gözaltına alındı. Soruşturma genişleyerek devam ediyor."
-    },
-    {
-      "category": "Gündem",
-      "title": "Kurban Bayramı'nda Köprü, Otoyol ve Toplu Taşıma Ücretsiz Olacak",
-      "desc": "Kurban Bayramı tatili boyunca milyonlarca vatandaşı ilgilendiren önemli bir karar alındı: Köprüler, otoyollar ve bazı şehirlerde toplu taşıma hizmetleri ücretsiz olarak sağlanacak."
-    },
-    {
-      "category": "Spor",
-      "title": "TFF, Süper Lig'de Yabancı Kuralını Resmen Açıkladı: 10+4 Sistemi",
-      "desc": "Türkiye Futbol Federasyonu, 2026/27 Süper Lig sezonundan itibaren geçerli olacak 10+4 yabancı oyuncu kuralını resmen duyurdu. Bu karar, takımların gelecek planlamalarını doğrudan etkileyecek."
+      "title": "Hatay'da Sağanak Hayatı Felç Etti: Köprüler Çöktü, Can Kaybı Var",
+      "desc": "Hatay'da etkili olan şiddetli sağanak yağış nedeniyle köprüler yıkıldı, yollar çöktü, birçok araç sürüklendi. Afette 2 kişi hayatını kaybederken, okullar tatil edildi."
     },
     {
       "category": "Siyaset",
-      "title": "Başkan Erdoğan'dan EFES-2026 Tatbikatı'nda Küresel Mesaj: 'Türk Ordusu Barışın Ordusudur'",
-      "desc": "Cumhurbaşkanı Erdoğan, EFES-2026 Tatbikatı'nda yaptığı konuşmada Türk ordusunun barış ve huzurun ordusu olduğunu vurguladı. Bu mesaj, Türkiye'nin uluslararası arenadaki konumuna dair önemli bir açıklama olarak öne çıktı."
+      "title": "Sumud Filosu Aktivistleri Türkiye'ye Dönüyor: Bakan Fidan Açıkladı",
+      "desc": "İsrail tarafından alıkonulan Sumud Filosu aktivistlerinin Türkiye'ye getirilmesi için özel uçak seferleri düzenleneceği Dışişleri Bakanı Hakan Fidan tarafından duyuruldu."
+    },
+    {
+      "category": "Gündem",
+      "title": "Tokat'ta Sel Uyarısı: 15 Bin Kişi Tahliye Edildi, 9 Kilometrelik Set Çekildi",
+      "desc": "Tokat'ta beklenen şiddetli yağışlar ve taşkın riskine karşı 15 bin kişi tahliye edildi. Kentte 9 kilometrelik dev kayalarla set çekilerek önlem alındı."
+    },
+    {
+      "category": "Gündem",
+      "title": "Dorukhan Büyükışık Dosyası 8 Yıl Sonra Açıldı: 9 İlde Operasyon, 22 Gözaltı",
+      "desc": "Bakan Gürlek'in açıklamasıyla Dorukhan Büyükışık cinayet dosyası 8 yıl sonra yeniden açıldı. 9 ilde eş zamanlı düzenlenen operasyonlarda 22 şüpheli gözaltına alındı."
+    },
+    {
+      "category": "Siyaset",
+      "title": "EFES-2026 Tatbikatı Nefes Kesti: Erdoğan'dan Dünya'ya Barış Mesajı",
+      "desc": "Türkiye'nin ev sahipliğinde gerçekleşen EFES-2026 Tatbikatı'nın gece ve gündüz safhaları başarıyla tamamlandı. Cumhurbaşkanı Erdoğan, Türk ordusunun barış ve huzurun ordusu olduğunu vurguladı."
+    },
+    {
+      "category": "Spor",
+      "title": "TFF'den Süper Lig İçin Yabancı Kuralı Açıklaması: 10+4 Sistemi Resmileşti",
+      "desc": "Türkiye Futbol Federasyonu (TFF), Süper Lig'de 2026/27 sezonundan itibaren geçerli olacak 10+4 yabancı kuralını resmen duyurdu."
     }
   ],
   "sources": "16 Farklı Ulusal Kaynak"
