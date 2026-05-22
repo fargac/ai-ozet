@@ -1,0 +1,51 @@
+name: Gezo Gündem Saatlik Özet Otomasyonu (CDN)
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+  
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-hourly-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları Çek
+        uses: actions/checkout@v4
+
+      - name: Python Kur ve Cache Ayarla
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Kütüphaneleri Yükle
+        run: pip install google-genai feedparser python-dateutil
+
+      - name: Saatlik Özeti Hazırla (Python)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        # 🔥 DİKKAT: Yeni oluşturduğumuz Python dosyasını tetikliyoruz
+        run: python scripts/hourly_summary.py
+
+     - name: Yeni Özeti Cloudflare R2'ye Yükle (CDN İçin)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          # 🔥 DİKKAT: Github'daki hourly_latest.json dosyasını, R2'ye latest.json olarak fırlatıyoruz!
+          aws s3 cp cdn_data/summaries/hourly_latest.json s3://gezo-data/latest.json \
+            --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --no-progress
+          echo "🚀 hourly_latest.json başarıyla Cloudflare R2'ye latest.json olarak yüklendi!"
+
+      - name: Değişiklikleri Github'a Pushla (Yedek)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "📝 feat(cdn): Saatlik özet (hourly_latest.json) güncellendi"
+          file_pattern: 'cdn_data/summaries/hourly_latest.json'
