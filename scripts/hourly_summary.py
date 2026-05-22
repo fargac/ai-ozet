@@ -11,12 +11,18 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 feedparser.USER_AGENT = USER_AGENT
 
 SOURCES = [
-    {"name": "Habertürk", "url": "https://www.haberturk.com/rss/manset.xml"},
-    {"name": "Sözcü",     "url": "https://www.sozcu.com.tr/feeds-son-dakika"},
-    {"name": "Hürriyet",  "url": "https://www.hurriyet.com.tr/rss/anasayfa"},
-    {"name": "Ekonomim",  "url": "https://www.ekonomim.com/rss"},
-    {"name": "NTV Spor",  "url": "https://www.ntvspor.net/rss/anasayfa"},
-    {"name": "Son Dakika","url": "https://rss.sondakika.com/rss_standart.asp"}
+    {"name": "CNN Türk",     "url": "https://www.cnnturk.com/feed/rss/all/news"},
+    {"name": "Hürriyet",     "url": "https://www.hurriyet.com.tr/rss/anasayfa"},
+    {"name": "Sözcü",        "url": "https://www.sozcu.com.tr/feeds-son-dakika"},
+    {"name": "Sabah",        "url": "https://www.sabah.com.tr/rss/gundem.xml"},
+    {"name": "Milliyet",     "url": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml"},
+    {"name": "Habertürk",    "url": "https://www.haberturk.com/rss/manset.xml"},
+    {"name": "En Son Haber", "url": "https://www.ensonhaber.com/rss/gundem.xml"},
+    {"name": "Mynet",        "url": "https://www.mynet.com/haber/rss/sondakika"},
+    {"name": "Son Dakika",   "url": "https://rss.sondakika.com/rss_standart.asp"},
+    {"name": "NTV Spor",     "url": "https://www.ntvspor.net/rss/anasayfa"},
+    {"name": "Fotomaç",      "url": "https://www.fotomac.com.tr/rss/son24saat.xml"},
+    {"name": "Ekonomim",     "url": "https://www.ekonomim.com/rss"}
 ]
 
 def get_todays_news():
