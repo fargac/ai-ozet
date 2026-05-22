@@ -1,36 +1,36 @@
 {
-  "generated_at": "2024-05-22T09:32:13.617Z",
+  "generated_at": "2024-05-22T09:40:25.990Z",
   "scanned_count": 100,
   "items": [
     {
-      "category": "Gündem",
-      "title": "CHP'de 'Mutlak Butlan' Krizi Derinleşiyor: Kılıçdaroğlu'ndan YSK Hamlesi",
-      "desc": "Yargıtay'ın CHP kongresiyle ilgili verdiği 'mutlak butlan' kararı sonrası parti içinde tansiyon yükseldi. Kemal Kılıçdaroğlu'nun Yüksek Seçim Kurulu'na yaptığı başvuru ve Özgür Özel ile yaşanan gerilimler, genel başkanlık yarışını yeniden alevlendirdi."
-    },
-    {
-      "category": "Dünya",
-      "title": "Ortadoğu'da Gerilim Tırmanıyor: ABD ve İran Arasında Diplomasi Trafiği",
-      "desc": "İran ve İsrail arasındaki karşılıklı saldırılar sonrası bölgedeki gerilim devam ediyor. ABD'nin arabuluculuk çabaları sürerken, Pakistan'ın da diplomasi trafiğine katıldığı ve küresel piyasaların gelişmeleri yakından takip ettiği belirtiliyor."
-    },
-    {
-      "category": "Eğitim",
-      "title": "Bilgi Üniversitesi Kapatıldı: YÖK'ten Öğrencilere Güvence",
-      "desc": "Resmi Gazete'de yayımlanan kararla Bilgi Üniversitesi'nin kapatıldığı duyuruldu. Yüksek Öğretim Kurulu (YÖK) yaptığı açıklamada, öğrencilerin eğitim haklarının korunacağını ve herhangi bir mağduriyet yaşanmaması için gerekli adımların atılacağını bildirdi."
+      "category": "Siyaset",
+      "title": "CHP'de 'Butlan' Fırtınası: Kılıçdaroğlu'ndan Hamleler, Özgür Özel'le Gerilim",
+      "desc": "Yargıtay'ın 'mutlak butlan' kararı sonrası CHP'de sular durulmuyor. Kılıçdaroğlu, YSK'ya başvurup üç avukatı görevden alırken, Özgür Özel ile arasındaki gerilim tırmanıyor; partide erken kurultay ve tasfiye senaryoları konuşuluyor."
     },
     {
       "category": "Ekonomi",
-      "title": "Ekonomi Yönetiminden Acil Toplantı: Piyasaların Gözü Alınacak Kararlarda",
-      "desc": "Son dönemdeki ekonomik gelişmeler ve 'mutlak butlan' kararı sonrası piyasalarda yaşanan hareketlilik üzerine ekonomi yönetimi sabah saatlerinde acil bir toplantı gerçekleştirdi. Toplantıdan çıkacak kararlar piyasalar tarafından yakından izleniyor."
+      "title": "'Butlan' Kararı Borsayı Sarstı, Ekonomi Yönetiminden Acil Toplantı",
+      "desc": "CHP'deki 'mutlak butlan' kararı sonrası İstanbul Borsası'nda sert düşüşler yaşandı. Ekonomi yönetimi, piyasalardaki dalgalanmayı değerlendirmek üzere sabah saatlerinde acil bir toplantı gerçekleştirdi."
+    },
+    {
+      "category": "Dünya",
+      "title": "İran-İsrail Gerilimi Tırmanıyor: ABD ve Pakistan Diplomatik Temaslarda",
+      "desc": "Orta Doğu'da İran ile İsrail arasındaki gerilim devam ederken, ABD ve Pakistan gibi ülkeler diplomatik çözüm arayışlarını hızlandırdı. Bölgedeki askeri hareketlilik ve karşılıklı açıklamalar endişeleri artırıyor."
     },
     {
       "category": "Gündem",
-      "title": "Bayram Tatili Öncesi Yoğunluk Başladı: Bakan Çiftçi'den 'Tuzak Radar' Açıklaması",
-      "desc": "Milyonlarca vatandaşın yola çıkmaya hazırlandığı Kurban Bayramı tatili öncesinde şehirlerarası yollarda yoğunluk arttı, Bolu Dağı'nda trafik kilitlendi. İçişleri Bakanı Mustafa Çiftçi, bayram tedbirlerini açıklarken 'tuzak radar' uygulaması yapılmayacağını duyurdu."
+      "title": "Bilgi Üniversitesi Kapatıldı, YÖK'ten Öğrenci Mağduriyetine Karşı Açıklama",
+      "desc": "Resmi Gazete'de yayımlanan karar sonrası Bilgi Üniversitesi kapatılırken, Yüksek Öğretim Kurulu (YÖK) öğrencilerin mağdur edilmeyeceğini ve gerekli tedbirlerin alınacağını duyurdu."
+    },
+    {
+      "category": "Gündem",
+      "title": "Yerel Yönetimlerde Yolsuzluk Operasyonları: Beşiktaş ve İBB'de Tutuklamalar",
+      "desc": "Beşiktaş Belediyesi'ne yönelik soruşturmada 3, İstanbul Büyükşehir Belediyesi (İBB) bünyesindeki yolsuzluk operasyonunda ise 25 şüpheli tutuklandı. Operasyonlar, yerel yönetimlerdeki yolsuzluk iddialarını yeniden gündeme getirdi."
     },
     {
       "category": "Spor",
-      "title": "Fenerbahçe'de Başkanlık Yarışı Kızışıyor: Aziz Yıldırım Listesini Açıkladı",
-      "desc": "Fenerbahçe Kulübü başkan adayı Aziz Yıldırım, yaklaşan seçim öncesi yönetim kurulu listesini kamuoyuyla paylaştı. Sarı-lacivertli camiada başkanlık yarışı giderek ısınıyor ve camianın gözü kongreye çevrildi."
+      "title": "Fenerbahçe Başkanlık Yarışı Kızıştı: Aziz Yıldırım Aday Listesini Açıkladı",
+      "desc": "Fenerbahçe Kulübü'nde yaklaşan başkanlık seçimi öncesi Aziz Yıldırım, yönetim kurulu aday listesini kamuoyuna duyurdu. Bu gelişme, Ali Koç ile arasındaki rekabeti daha da alevlendirdi."
     }
   ],
   "sources": "11 Farklı Ulusal Kaynak"
