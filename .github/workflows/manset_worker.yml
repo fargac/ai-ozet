@@ -1,0 +1,41 @@
+name: Gezo Mansetleri Guncelle
+
+# Cloudflare Worker bu botu API üzerinden tetikleyeceği için sadece workflow_dispatch yeterli
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-manset-scraper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodlari Cek
+        uses: actions/checkout@v4
+
+      - name: Python Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Kutuphaneleri Yukle
+        # scraper.py hangi kütüphaneleri kullanıyorsa buraya ekleyebilirsin
+        run: pip install requests beautifulsoup4 
+
+      - name: Mansetleri Kazı
+        run: python scripts/manset_scraper.py
+
+      - name: R2'ye Yukle
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          aws s3 cp mansetler.json s3://gezo-data/mansetler.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+
+      - name: Github'a Pushla
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "feat(cdn): Mansetler guncellendi ve R2'ye aktarıldı"
+          file_pattern: 'mansetler.json'
