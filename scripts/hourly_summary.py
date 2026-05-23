@@ -48,7 +48,9 @@ def get_todays_news():
 
     return today_news_list
 
-def generate_ai_summary(news_data):
+def generate_ai_summary(news_data,use_fallback=False):
+    model_name = 'gemini-1.5-flash' if use_fallback else 'gemini-2.5-flash'
+    print(f"🤖 Yapay zeka modeli olarak '{model_name}' deneniyor...")
     news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
     prompt = f"""
     Sen Gezo Gündem uygulamasının baş editörüsün. Türkiye'nin en büyük 6 kaynağından son 24 saatin haberleri:
@@ -66,12 +68,22 @@ def generate_ai_summary(news_data):
     """
 
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-    response = client.models.generate_content(
+    try:
+        response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=prompt,
         config=genai.types.GenerateContentConfig(response_mime_type="application/json")
-    )
-    return json.loads(response.text)
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        error_str = str(e)
+        # Eğer 2.5 modelindeyken 429 Kota Hatası alırsak, anında 1.5 modeline düş (Fallback)
+        if not use_fallback and ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str):
+            print("⚠️ Gemini 2.5 kotası doldu! Beklemeden otomatik olarak 1.5 modeline geçiliyor...")
+            return generate_ai_summary(news_data, use_fallback=True)
+        
+        # Başka bir hata varsa veya 1.5 modeli de patladıysa hatayı fırlat (Ana döngü yakalasın)
+        raise e
 
 def save_to_cdn(summary_data, scanned_count):
     output_dir = os.path.join(
