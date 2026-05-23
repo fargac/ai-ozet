@@ -49,7 +49,7 @@ def get_todays_news():
     return today_news_list
 
 def generate_ai_summary(news_data,use_fallback=False):
-    model_name = 'gemini-1.5-flash' if use_fallback else 'gemini-2.5-flash'
+    model_name = 'gemini-2.0-flash' if use_fallback else 'gemini-3.5-flash'
     print(f"🤖 Yapay zeka modeli olarak '{model_name}' deneniyor...")
     news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
     prompt = f"""
