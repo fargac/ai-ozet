@@ -70,7 +70,7 @@ def generate_ai_summary(news_data,use_fallback=False):
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
     try:
         response = client.models.generate_content(
-        model='gemini-2.5-flash',
+        model=model_name,
         contents=prompt,
         config=genai.types.GenerateContentConfig(response_mime_type="application/json")
         )
