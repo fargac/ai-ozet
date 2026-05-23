@@ -53,17 +53,29 @@ def generate_ai_summary(news_data,use_fallback=False):
     print(f"🤖 Yapay zeka modeli olarak '{model_name}' deneniyor...")
     news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
     prompt = f"""
-    Sen Gezo Gündem uygulamasının baş editörüsün. Türkiye'nin en büyük 6 kaynağından son 24 saatin haberleri:
+    Sen Gezo Gündem uygulamasının Kıdemli Genel Yayın Yönetmenisin. Amacın, yoğun insanlara günün en kritik gelişmeleri hakkında kusursuz bir "Yönetici Özeti (Executive Briefing)" sunmak.
+    
+    Aşağıda Türkiye'nin en büyük kaynaklarından toplanmış son 24 saatin haber havuzu bulunuyor:
     {news_text}
-    GÖREVİN: BUGÜNÜN gündemine damga vuran en hayati 6 maddeyi seç. Yanıtı SADECE aşağıdaki JSON formatında ver:
+
+    GÖREVİN VE EDİTORYAL KURALLAR:
+    1. SEÇİM: Gündemi en çok etkileyen, toplumda, ekonomide veya siyasette en çok yankı uyandıran en hayati 6 benzersiz gelişmeyi seç. (Mükerrer/aynı olayı anlatan haberleri birleştirerek tek madde yap).
+    2. SIRALAMA (ÇOK KRİTİK): Seçtiğin 6 maddeyi yayınlanma saatine göre DEĞİL, Türkiye gündemindeki önem derecesine ve etki gücüne (impact) göre sırala. Gündemi sarsan en kritik olay KESİNLİKLE 1. sırada yer almalı, diğerleri önem sırasına göre azalmalıdır.
+    3. ÜSLUP: Objektif, net ve tık tuzağı (clickbait) içermeyen prestijli bir dil kullan. Başlıklar kısa ve vurucu (maksimum 6 kelime), detaylar ise doyurucu olmalı (5N1K kuralına uygun 2-3 cümle).
+    
+    Yanıtı SADECE ve EKSİKSİZ aşağıdaki JSON formatında ver. JSON dışında tek bir kelime bile açıklama yazma:
     {{
-        "push_title": "📅 Günün Özeti: Neler Oldu?",
-        "push_body": "Kısa özet...",
+        "push_title": "📅 Günün Özeti: Gündemde Neler Oluyor?",
+        "push_body": "[Buraya seçtiğin o en önemli 1. haberin dikkat çekici ve merak uyandırıcı tek cümlelik özetini yaz, çünkü bu bildirim olarak gidecek]",
         "detailed_summary": [
-            {{"title": "Madde 1 Kısa Başlık", "desc": "Detay"}},
-            {{"title": "Madde 2 Kısa Başlık", "desc": "Detay"}}
+            {{"title": "1. Haberin Vurucu Kısa Başlığı", "desc": "En önemli haberin detaylı, net ve doyurucu açıklaması."}},
+            {{"title": "2. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
+            {{"title": "3. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
+            {{"title": "4. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
+            {{"title": "5. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
+            {{"title": "6. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}}
         ],
-        "sources_used": "Kaynak 1 • Kaynak 2"
+        "sources_used": "Kaynak 1 • Kaynak 2 • Kaynak 3"
     }}
     """
 
