@@ -34,6 +34,22 @@ jobs:
         run: |
           aws s3 cp mansetler.json s3://gezo-data/mansetler.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
 
+     # YENİ ADIM: KV cache'i temizle → Worker bir sonraki istekte R2'den taze veri çeker
+      - name: KV Cache Temizle
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: |
+          curl -s -X DELETE \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE_ID}/values/mansetler_data" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json"
+          curl -s -X DELETE \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE_ID}/values/mansetler_version" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json"
+          echo "✅ KV cache temizlendi"
       - name: Github'a Pushla
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
