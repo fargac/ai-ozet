@@ -31,42 +31,7 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
-def fetch_thumbnails_map():
-    """
-    Ana sayfadan (gazete-mansetleri dizini) tüm küçük resim (thumbnail) linklerini
-    tek seferde çeker ve slug bazlı bir sözlük (dictionary) olarak döndürür.
-    """
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Küçük resimler (Thumbnails) taranıyor...")
-    thumb_map = {}
-    
-    url = "https://www.haber7.com/gazete-mansetleri"
-    
-    try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, "html.parser")
-        
-        # İçinde '/gazete-mansetleri/' geçen tüm linkleri bul (Slider elemanları)
-        for a_tag in soup.find_all("a", href=True):
-            href = a_tag["href"]
-            if "/gazete-mansetleri/" in href:
-                slug = href.split("/")[-1].strip()
-                img_tag = a_tag.find("img")
-                
-                if img_tag:
-                    # Haber7'de resimler Lazy Load olduğu için data-src veya data-original içinde olabilir
-                    src = img_tag.get("data-src") or img_tag.get("data-original") or img_tag.get("src")
-                    
-                    if src and slug not in thumb_map:
-                        thumb_map[slug] = src
-                        
-        print(f"✅ Başarılı: {len(thumb_map)} adet küçük resim haritalandı.\n")
-    except Exception as e:
-        print(f"⚠️ Küçük resimler taranırken hata oluştu: {e}\n")
-        
-    return thumb_map
-
-def tek_gazete_cek(gazete, thumb_map):
+def tek_gazete_cek(gazete):
     url = f"https://www.haber7.com/gazete-mansetleri/{gazete['slug']}"
     try:
         response = requests.get(url, headers=HEADERS, timeout=10)
@@ -78,12 +43,8 @@ def tek_gazete_cek(gazete, thumb_map):
         if img_tag and img_tag.get("src"):
             big_url = img_tag["src"]
             
-            # 1. Öncelik: Ana sayfadan çektiğimiz orijinal küçük resim URL'si
-            small_url = thumb_map.get(gazete["slug"])
-            
-            # 2. Öncelik (Fallback): Eğer ana sayfada bulunamadıysa string manipülasyonu ile üret
-            if not small_url:
-                small_url = big_url.replace("/big_", "/small_big_")
+            # HD linkten Thumbnail linki üretiliyor. Zaman damgası %100 aynı olacak.
+            small_url = big_url.replace("/big_", "/small_").replace("?v=", "?")
             
             print(f"✅ Başarılı: {gazete['name']}")
             return {
@@ -103,20 +64,17 @@ def tek_gazete_cek(gazete, thumb_map):
 def fetch_mansetler_paralel():
     sonuclar = []
     
-    # Adım 1: Küçük resim haritasını önden tek bir istekle oluştur
-    thumb_map = fetch_thumbnails_map()
-    
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Manşetler PARALEL olarak çekiliyor...\n")
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        # lambda kullanarak thumb_map değişkenini işçilere parametre olarak aktarıyoruz
-        sonuclar_iterator = executor.map(lambda g: tek_gazete_cek(g, thumb_map), GAZETELER)
+        # Eski thumb_map mantığı kaldırıldı, doğrudan gazeteler işleniyor.
+        sonuclar_iterator = executor.map(tek_gazete_cek, GAZETELER)
         
         for data in sonuclar_iterator:
             if data is not None:
                 sonuclar.append(data)
 
-    # İşlemler bitince JSON dosyasına kaydet
+    # JSON dosyasına kaydet
     with open("mansetler.json", "w", encoding="utf-8") as f:
         json.dump(sonuclar, f, ensure_ascii=False, indent=4)
         
