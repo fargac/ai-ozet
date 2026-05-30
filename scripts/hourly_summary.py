@@ -42,27 +42,41 @@ def get_todays_news():
                     pub_date = pub_date.replace(tzinfo=timezone.utc)
 
                 if pub_date >= today_start:
-                    today_news_list.append({"source": source['name'], "title": entry.title})
+                    # YENİ: Haberin açıklamasını (içeriğini) de RSS'ten çekiyoruz
+                    desc = entry.get('summary', entry.get('description', ''))
+                    # HTML etiketlerinden arındırılmış temiz metnin ilk 250 karakteri bağlam için yeterlidir
+                    clean_desc = desc[:250].replace('\n', ' ').strip()
+                    
+                    today_news_list.append({
+                        "source": source['name'], 
+                        "title": entry.title,
+                        "desc": clean_desc # Bağlama eklendi
+                    })
         except Exception as e:
             print(f"❌ {source['name']} okunurken hata: {e}")
 
     return today_news_list
 
-def generate_ai_summary(news_data,use_fallback=False):
-    model_name = 'gemini-2.0-flash' if use_fallback else 'gemini-3.5-flash'
+def generate_ai_summary(news_data, use_fallback=False):
+    # Modeller listene göre güncellendi: Ana model 3.5-flash, fallback (yedek) model 2.5-flash
+    model_name = 'gemini-2.5-flash' if use_fallback else 'gemini-3.5-flash'
     print(f"🤖 Yapay zeka modeli olarak '{model_name}' deneniyor...")
-    news_text = "\n".join([f"- [{n['source']}] {n['title']}" for n in news_data])
+    
+    # YENİ: Sadece başlık değil, detay da modele gönderiliyor
+    news_text = "\n".join([f"- [{n['source']}] {n['title']} (Detay: {n['desc']})" for n in news_data])
+    
     prompt = f"""
     Sen Gezo Gündem uygulamasının Kıdemli Genel Yayın Yönetmenisin. Amacın, yoğun insanlara günün en kritik gelişmeleri hakkında kusursuz bir "Yönetici Özeti (Executive Briefing)" sunmak.
     
-    Aşağıda Türkiye'nin en büyük kaynaklarından toplanmış son 24 saatin haber havuzu bulunuyor:
+    Aşağıda Türkiye'nin en büyük kaynaklarından toplanmış son 24 saatin haber havuzu (Başlık ve Detaylar) bulunuyor:
     {news_text}
 
     GÖREVİN VE EDİTORYAL KURALLAR:
     1. SEÇİM: Gündemi en çok etkileyen, toplumda, ekonomide veya siyasette en çok yankı uyandıran en hayati 6 benzersiz gelişmeyi seç. (Mükerrer/aynı olayı anlatan haberleri birleştirerek tek madde yap).
     2. SIRALAMA (ÇOK KRİTİK): Seçtiğin 6 maddeyi yayınlanma saatine göre DEĞİL, Türkiye gündemindeki önem derecesine ve etki gücüne (impact) göre sırala. Gündemi sarsan en kritik olay KESİNLİKLE 1. sırada yer almalı, diğerleri önem sırasına göre azalmalıdır.
     3. ÜSLUP: Objektif, net ve tık tuzağı (clickbait) içermeyen prestijli bir dil kullan. Başlıklar kısa ve vurucu (maksimum 6 kelime), detaylar ise doyurucu olmalı (5N1K kuralına uygun 2-3 cümle).
-    
+    4. KESİNLİK VE DOĞRULUK (ÇOK ÖNEMLİ): Haber başlığında veya detayında AÇIKÇA belirtilmeyen HİÇBİR kişi, kurum, takım veya mekan adını ASLA tahmin etme. Bilgiyi sadece sana verilen metinden al. Eğer bir transfer veya anlaşma haberi varsa, tarafı kendi kendine uydurma.
+
     Yanıtı SADECE ve EKSİKSİZ aşağıdaki JSON formatında ver. JSON dışında tek bir kelime bile açıklama yazma:
     {{
         "push_title": "📅 Günün Özeti: Gündemde Neler Oluyor?",
@@ -82,19 +96,18 @@ def generate_ai_summary(news_data,use_fallback=False):
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
     try:
         response = client.models.generate_content(
-        model=model_name,
-        contents=prompt,
-        config=genai.types.GenerateContentConfig(response_mime_type="application/json")
+            model=model_name,
+            contents=prompt,
+            config=genai.types.GenerateContentConfig(response_mime_type="application/json")
         )
         return json.loads(response.text)
     except Exception as e:
         error_str = str(e)
-        # Eğer 2.5 modelindeyken 429 Kota Hatası alırsak, anında 1.5 modeline düş (Fallback)
+        # Fallback mantığındaki print mesajı güncellendi
         if not use_fallback and ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str):
-            print("⚠️ Gemini 2.5 kotası doldu! Beklemeden otomatik olarak 1.5 modeline geçiliyor...")
+            print(f"⚠️ {model_name} kotası doldu! Beklemeden otomatik olarak gemini-2.5-flash modeline geçiliyor...")
             return generate_ai_summary(news_data, use_fallback=True)
         
-        # Başka bir hata varsa veya 1.5 modeli de patladıysa hatayı fırlat (Ana döngü yakalasın)
         raise e
 
 def save_to_cdn(summary_data, scanned_count):
@@ -121,7 +134,6 @@ def save_to_cdn(summary_data, scanned_count):
         "sources": summary_data['sources_used']
     }
 
-    # Doğrudan hourly_latest.json olarak kaydediyoruz (İşi çok basitleştiriyor)
     latest_path = os.path.join(output_dir, "hourly_latest.json")
     with open(latest_path, 'w', encoding='utf-8') as f:
         json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
