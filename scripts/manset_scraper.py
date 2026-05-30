@@ -81,17 +81,33 @@ def get_session() -> requests.Session:
         thread_local.session = session
     return thread_local.session
 
-# --- 4. GÖRSEL DOĞRULAMA (HEAD İsteği) ---
-def check_image_url(session: requests.Session, url: str) -> bool:
+# --- 4. GÖRSEL DOĞRULAMA (HEAD İsteği ve Boyut Kontrolü) ---
+def check_image_url(session: requests.Session, url: str, min_size_bytes: int = 10000) -> bool:
     """
-    Sadece HTTP başlıklarını çekerek (HEAD isteği ile) görselin varlığını
-    ve tipini çok hızlı bir şekilde doğrular.
+    Sadece HTTP başlıklarını çekerek (HEAD isteği ile) görselin varlığını,
+    tipini ve SAHTE (placeholder) olup olmadığını dosya boyutundan doğrular.
     """
     try:
         response = session.head(url, timeout=10, allow_redirects=True)
         if response.status_code == 200:
             content_type = response.headers.get("Content-Type", "").lower()
-            return content_type.startswith("image/")
+            
+            # 1. Kural: Geçerli bir görsel formatı mı?
+            if not content_type.startswith("image/"):
+                return False
+                
+            # 2. Kural: Placeholder (Gazete Alınamadı) kontrolü (Boyut bazlı)
+            content_length = response.headers.get("Content-Length")
+            if content_length:
+                # String gelen boyutu integer'a çeviriyoruz
+                size_in_bytes = int(content_length)
+                
+                # Eğer görsel belirlenen eşik değerinden küçükse (örn: 10 KB) reddet
+                if size_in_bytes < min_size_bytes:
+                    logger.warning(f"Sahte/Placeholder Görsel Tespit Edildi (Boyut: {size_in_bytes} bytes) -> {url}")
+                    return False
+                    
+            return True
         return False
     except requests.RequestException:
         return False
@@ -124,22 +140,20 @@ def process_gazete(gazete: dict) -> Optional[GazeteManseti]:
         
         # Linklerin çalışıp çalışmadığını kontrol et
         is_small_valid = check_image_url(session, small_url)
-        is_big_valid = check_image_url(session, big_url)
         
         # İkisi de çalışmıyorsa reddet.
-        if not is_big_valid and not is_small_valid:
+        if not is_small_valid:
             logger.error(f"Kırık Linkler (Sunucuda Yok): {gazete['name']}")
             return None
             
         final_thumb = small_url if is_small_valid else big_url
-        final_big = big_url if is_big_valid else final_thumb
         
         logger.info(f"Başarılı: {gazete['name']}")
         
         return GazeteManseti(
             id=gazete["id"],
             name=gazete["name"],
-            todayUrl=final_big,
+            todayUrl=big_url,
             thumbUrl=final_thumb,
             webAdresi=gazete["link"]
         )
