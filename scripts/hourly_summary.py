@@ -45,7 +45,7 @@ def get_todays_news():
                     # YENİ: Haberin açıklamasını (içeriğini) de RSS'ten çekiyoruz
                     desc = entry.get('summary', entry.get('description', ''))
                     # HTML etiketlerinden arındırılmış temiz metnin ilk 250 karakteri bağlam için yeterlidir
-                    clean_desc = desc[:250].replace('\n', ' ').strip()
+                    clean_desc = desc.replace('\n', ' ').strip()
                     
                     today_news_list.append({
                         "source": source['name'], 
