@@ -59,7 +59,7 @@ def get_todays_news():
 
 def generate_ai_summary(news_data, use_fallback=False):
     # Modeller listene göre güncellendi: Ana model 3.5-flash, fallback (yedek) model 2.5-flash
-    model_name = 'gemini-2.5-flash' if use_fallback else 'gemini-3.5-flash'
+    model_name = 'gemini-3.5-flash' if use_fallback else 'gemini-2.5-flash'
     print(f"🤖 Yapay zeka modeli olarak '{model_name}' deneniyor...")
     
     # YENİ: Sadece başlık değil, detay da modele gönderiliyor
