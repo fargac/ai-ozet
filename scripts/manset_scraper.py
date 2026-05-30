@@ -1,8 +1,23 @@
+import os
 import json
-import requests
-from bs4 import BeautifulSoup
-from datetime import datetime
+import logging
+import threading
 import concurrent.futures
+from dataclasses import dataclass, asdict
+from typing import Optional, List
+
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from bs4 import BeautifulSoup
+
+# --- 1. AYARLAR VE LOGLAMA ---
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(threadName)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
 
 GAZETELER = [
     {"id": "manset_aksam", "name": "Akşam", "slug": "aksam", "link": "https://www.aksam.com.tr"},
@@ -22,63 +37,143 @@ GAZETELER = [
     {"id": "manset_yeni_birlik", "name": "Yeni Birlik", "slug": "yeni-birlik", "link": "https://www.gazetebirlik.com"},
     {"id": "manset_yeni_cag", "name": "Yeniçağ", "slug": "yenicag", "link": "https://www.yenicaggazetesi.com.tr"},
     {"id": "manset_yeni_safak", "name": "Yeni Şafak", "slug": "yeni-safak", "link": "https://www.yenisafak.com"},
-    {"id": "manset_yeni_soz", "name": "Yenisöz", "slug": "yenisoz", "link": "https://www.yenisoz.com.tr"},
     {"id": "manset_fotomac", "name": "Fotomaç", "slug": "fotomac", "link": "https://www.fotomac.com.tr"},
-    {"id": "manset_fanatik", "name": "Fanatik", "slug": "fanatik", "link": "https://www.fanatik.com.tr"},
+    {"id": "manset_fanatik", "name": "Fanatik", "slug": "fanatik", "link": "https://www.fanatik.com.tr"}
 ]
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
 }
 
-def tek_gazete_cek(gazete):
-    url = f"https://www.haber7.com/gazete-mansetleri/{gazete['slug']}"
+# --- 2. VERİ MODELİ (Dataclass) ---
+@dataclass
+class GazeteManseti:
+    id: str
+    name: str
+    todayUrl: str
+    thumbUrl: str
+    webAdresi: str
+
+# --- 3. SESSION VE RETRY YÖNETİMİ ---
+thread_local = threading.local()
+
+def get_session() -> requests.Session:
+    """
+    Her thread için, otomatik 'Retry' (Yeniden Deneme) özelliğine sahip
+    kalıcı bir Session döndürür.
+    """
+    if not hasattr(thread_local, "session"):
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        
+        # Sunucu 500, 502, 503, 504 veya 429 dönerse otomatik tekrar dener (max 3 kez).
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "OPTIONS"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        
+        thread_local.session = session
+    return thread_local.session
+
+# --- 4. GÖRSEL DOĞRULAMA (HEAD İsteği) ---
+def check_image_url(session: requests.Session, url: str) -> bool:
+    """
+    Sadece HTTP başlıklarını çekerek (HEAD isteği ile) görselin varlığını
+    ve tipini çok hızlı bir şekilde doğrular.
+    """
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        response = session.head(url, timeout=10, allow_redirects=True)
+        if response.status_code == 200:
+            content_type = response.headers.get("Content-Type", "").lower()
+            return content_type.startswith("image/")
+        return False
+    except requests.RequestException:
+        return False
+
+# --- 5. İŞ MANTIĞI (Scraping) ---
+def process_gazete(gazete: dict) -> Optional[GazeteManseti]:
+    """Bir gazetenin sayfasını indirir, parse eder ve linklerin çalıştığını doğrular."""
+    session = get_session()
+    url = f"https://www.haber7.com/gazete-mansetleri/{gazete['slug']}"
+    
+    try:
+        response = session.get(url, timeout=15)
         response.raise_for_status()
         
-        soup = BeautifulSoup(response.content, "html.parser")
-        img_tag = soup.find("img", class_="big")
+        soup = BeautifulSoup(response.text, "html.parser")
         
-        if img_tag and img_tag.get("src"):
-            big_url = img_tag["src"]
-            
-            # HD linkten Thumbnail linki üretiliyor. Zaman damgası %100 aynı olacak.
-            small_url = big_url.replace("/big_", "/small_").replace("?v=", "?")
-            
-            print(f"✅ Başarılı: {gazete['name']}")
-            return {
-                "id": gazete["id"],
-                "name": gazete["name"],
-                "todayUrl": big_url,      # HD (Galeri için)
-                "thumbUrl": small_url,    # Thumbnail (Grid liste için - HAFİF)
-                "webAdresi": gazete["link"]
-            }
-        else:
-            print(f"⚠️ Görsel Bulunamadı: {gazete['name']}")
+        big_url = None
+        for img in soup.find_all("img"):
+            src = img.get("src", "")
+            if "/big_" in src:
+                big_url = src
+                break
+                
+        if not big_url:
+            logger.warning(f"Görsel HTML'de bulunamadı: {gazete['name']}")
             return None
+
+        # Small URL'yi oluştur
+        small_url = big_url.replace("/big_", "/small_").replace("?v=", "?")
+        
+        # Linklerin çalışıp çalışmadığını kontrol et
+        is_small_valid = check_image_url(session, small_url)
+        is_big_valid = check_image_url(session, big_url)
+        
+        # İkisi de çalışmıyorsa reddet.
+        if not is_big_valid and not is_small_valid:
+            logger.error(f"Kırık Linkler (Sunucuda Yok): {gazete['name']}")
+            return None
+            
+        final_thumb = small_url if is_small_valid else big_url
+        final_big = big_url if is_big_valid else final_thumb
+        
+        logger.info(f"Başarılı: {gazete['name']}")
+        
+        return GazeteManseti(
+            id=gazete["id"],
+            name=gazete["name"],
+            todayUrl=final_big,
+            thumbUrl=final_thumb,
+            webAdresi=gazete["link"]
+        )
+
     except Exception as e:
-        print(f"❌ Hata ({gazete['name']}): {e}")
+        logger.error(f"Hata ({gazete['name']}): {str(e)}")
         return None
 
-def fetch_mansetler_paralel():
-    sonuclar = []
+# --- 6. ORKESTRASYON ---
+def main():
+    logger.info("Manşetler PARALEL olarak çekiliyor...")
     
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Manşetler PARALEL olarak çekiliyor...\n")
+    sonuclar: List[dict] = []
+    max_workers = min(10, len(GAZETELER))
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-        # Eski thumb_map mantığı kaldırıldı, doğrudan gazeteler işleniyor.
-        sonuclar_iterator = executor.map(tek_gazete_cek, GAZETELER)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_gazete = {executor.submit(process_gazete, g): g for g in GAZETELER}
         
-        for data in sonuclar_iterator:
-            if data is not None:
-                sonuclar.append(data)
+        for future in concurrent.futures.as_completed(future_to_gazete):
+            result = future.result()
+            if result is not None:
+                sonuclar.append(asdict(result))
 
-    # JSON dosyasına kaydet
-    with open("mansetler.json", "w", encoding="utf-8") as f:
-        json.dump(sonuclar, f, ensure_ascii=False, indent=4)
+    # JSON çıktısında gazetelerin her zaman aynı sırada olması için
+    sonuclar_sirali = sorted(sonuclar, key=lambda x: x["id"])
+
+    temp_file = "mansetler.tmp.json"
+    final_file = "mansetler.json"
+    
+    with open(temp_file, "w", encoding="utf-8") as f:
+        json.dump(sonuclar_sirali, f, ensure_ascii=False, indent=4)
         
-    print(f"\n🚀 İşlem tamam! Toplam {len(sonuclar)} gazete başarıyla kaydedildi.")
+    os.replace(temp_file, final_file)
+    logger.info(f"İşlem tamam! Çalışan {len(sonuclar_sirali)} manşet başarıyla kaydedildi.")
 
 if __name__ == "__main__":
-    fetch_mansetler_paralel()
+    main()
