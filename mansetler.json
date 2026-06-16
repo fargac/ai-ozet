@@ -2,120 +2,127 @@
     {
         "id": "manset_aksam",
         "name": "Akşam",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/aksam/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/aksam/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/aksam/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/aksam/small_160626_0800.jpg",
         "webAdresi": "https://www.aksam.com.tr"
     },
     {
         "id": "manset_aydinlik",
         "name": "Aydınlık",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/aydinlik/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/aydinlik/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/aydinlik/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/aydinlik/small_160626_0800.jpg",
         "webAdresi": "https://www.aydinlik.com.tr"
     },
     {
         "id": "manset_dirilis_postasi",
         "name": "Diriliş P.",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/dirilis-postasi/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/dirilis-postasi/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/dirilis-postasi/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/dirilis-postasi/small_160626_0800.jpg",
         "webAdresi": "https://www.dirilispostasi.com"
+    },
+    {
+        "id": "manset_dogru-haber",
+        "name": "Doğru Haber",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/dogru-haber/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/dogru-haber/small_160626_0800.jpg",
+        "webAdresi": "https://dogruhaber.com.tr"
     },
     {
         "id": "manset_dunya",
         "name": "Dünya",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/dunya/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/dunya/big_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/dunya/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/dunya/big_160626_0800.jpg",
         "webAdresi": "https://www.dunya.com"
     },
     {
         "id": "manset_fotomac",
         "name": "Fotomaç",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/fotomac/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/fotomac/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/fotomac/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/fotomac/small_160626_0800.jpg",
         "webAdresi": "https://www.fotomac.com.tr"
     },
     {
         "id": "manset_hurriyet",
         "name": "Hürriyet",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/hurriyet/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/hurriyet/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/hurriyet/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/hurriyet/small_160626_0800.jpg",
         "webAdresi": "https://www.hurriyet.com.tr"
     },
     {
         "id": "manset_milat",
         "name": "Milat",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/milat/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/milat/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/milat/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/milat/small_160626_0800.jpg",
         "webAdresi": "https://www.milatgazetesi.com"
     },
     {
         "id": "manset_milli_gazete",
         "name": "Milli Gazete",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/milli-gazete/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/milli-gazete/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/milli-gazete/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/milli-gazete/small_160626_0800.jpg",
         "webAdresi": "https://www.milligazete.com.tr"
     },
     {
         "id": "manset_milliyet",
         "name": "Milliyet",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/milliyet/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/milliyet/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/milliyet/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/milliyet/small_160626_0800.jpg",
         "webAdresi": "https://www.milliyet.com.tr"
     },
     {
         "id": "manset_sabah",
         "name": "Sabah",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/sabah/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/sabah/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/sabah/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/sabah/small_160626_0800.jpg",
         "webAdresi": "https://www.sabah.com.tr"
     },
     {
         "id": "manset_takvim",
         "name": "Takvim",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/takvim-gazetesi/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/takvim-gazetesi/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/takvim-gazetesi/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/takvim-gazetesi/small_160626_0800.jpg",
         "webAdresi": "https://www.takvim.com.tr"
     },
     {
         "id": "manset_turkgun",
         "name": "Türkgün",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/turkgun/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/turkgun/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/turkgun/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/turkgun/small_160626_0800.jpg",
         "webAdresi": "https://www.turkgun.com"
     },
     {
         "id": "manset_turkiye",
         "name": "Türkiye",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/turkiye/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/turkiye/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/turkiye/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/turkiye/small_160626_0800.jpg",
         "webAdresi": "https://www.turkiyegazetesi.com.tr"
     },
     {
         "id": "manset_yeni_akit",
         "name": "Yeni Akit",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/yeni-akit/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yeni-akit/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/yeni-akit/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yeni-akit/small_160626_0800.jpg",
         "webAdresi": "https://www.yeniakit.com.tr"
     },
     {
         "id": "manset_yeni_birlik",
         "name": "Yeni Birlik",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/yeni-birlik/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yeni-birlik/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/yeni-birlik/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yeni-birlik/small_160626_0800.jpg",
         "webAdresi": "https://www.gazetebirlik.com"
     },
     {
         "id": "manset_yeni_cag",
         "name": "Yeniçağ",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/yenicag/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yenicag/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/yenicag/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yenicag/small_160626_0800.jpg",
         "webAdresi": "https://www.yenicaggazetesi.com.tr"
     },
     {
         "id": "manset_yeni_safak",
         "name": "Yeni Şafak",
-        "todayUrl": "https://i13.haber7.net/haber7/gazete/yeni-safak/big_150626_0800.jpg",
-        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yeni-safak/small_150626_0800.jpg",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/yeni-safak/big_160626_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/yeni-safak/small_160626_0800.jpg",
         "webAdresi": "https://www.yenisafak.com"
     }
 ]
