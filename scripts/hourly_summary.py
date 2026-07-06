@@ -7,7 +7,9 @@ from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 from google import genai
 from pydantic import BaseModel, Field  
+from typing import Optional, List
 from bs4 import BeautifulSoup
+from rapidfuzz import fuzz
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -32,12 +34,13 @@ SOURCES = [
 class NewsItem(BaseModel):
     title: str = Field(description="Vurucu Kısa Başlık. Maksimum 6 kelime.")
     desc: str = Field(description="Detaylı açıklama. 2-3 cümle.")
-    source_titles: list[str] = Field(description="Bu maddeyi oluştururken kullanılan ham RSS başlıkları.")
+    source_titles: List[str] = Field(description="Bu maddeyi oluştururken kullanılan ham RSS başlıkları.")
 
 class SummaryResponse(BaseModel):
     has_changes: bool = Field(description="Sana verilen 'Bir Önceki Saatin Özeti' ile yeni gelen haberleri kıyasladığında, gündemi değiştirecek ÖNEMLİ YENİ BİR GELİŞME var mı?")
-    detailed_summary: list[NewsItem] = Field(default=[], description="Haber maddelerinin listesi.")
-    sources_used: str = Field(default="", description="Kullanılan kaynaklar. Örn: 'CNN Türk • Sözcü'")
+    # Optional eklenerek "has_changes: false ise başka alan döndürme" kuralının çalışması sağlandı
+    detailed_summary: Optional[List[NewsItem]] = Field(default=None, description="Haber maddelerinin listesi.")
+    sources_used: Optional[str] = Field(default=None, description="Kullanılan kaynaklar. Örn: 'CNN Türk • Sözcü'")
 
 def get_todays_news():
     today_news_list = []
@@ -103,6 +106,7 @@ def get_seen_links_cache():
 def generate_ai_summary(new_news_data, previous_summary_data=None, use_fallback=False):
     main_model = 'gemini-3.5-flash'
     fallback_model = 'gemini-2.5-flash'
+
     model_name = fallback_model if use_fallback else main_model
     
     print(f"🤖 Yapay zeka modeli '{model_name}' ile {len(new_news_data)} yeni haber değerlendiriliyor...")
@@ -115,20 +119,132 @@ def generate_ai_summary(new_news_data, previous_summary_data=None, use_fallback=
         prev_context = f"\nBİR ÖNCEKİ SAATİN ÖZETİ (MEVCUT GÜNDEM):\n{prev_text}\n"
 
     prompt = f"""
-    Sen Gezo Gündem uygulamasının Kıdemli Genel Yayın Yönetmenisin.
-    
-    Aşağıda sisteme son 1 saatte düşmüş SADECE YENİ HABERLER (DELTA HAVUZU) bulunuyor:
-    {news_text}
-    {prev_context}
+Sen Gezo Gündem uygulamasının Kıdemli Genel Yayın Yönetmenisin.
 
-    GÖREVİN VE EDİTORYAL KURALLAR:
-    1. KIYASLAMA VE HAFIZA: Sana verilen 'Bir Önceki Saatin Özeti' (mevcut gündem) ile sisteme yeni düşen 'Delta Havuzu'nu kıyasla. Eğer bu yeni haberler içinde, listeye girmeyi hak edecek veya gündemi değiştirecek ÖNEMLİ YENİ BİR GELİŞME YOKSA, JSON'da has_changes alanını false yap.
-    2. YENİ GELİŞME VARSA: Eğer önemli yeni bir gelişme varsa has_changes alanını true yap. Yeni gelişmeyi listeye ekle, yer açmak için en önemsiz eski maddeyi listeden çıkar.
-    3. source_titles ALANI (KRİTİK): Seçtiğin her madde için, o maddeyi oluşturmakta kullandığın ham haber başlıklarını BİREBİR kopyalayarak `source_titles` dizisine yaz.
-    4. SEÇİM: Gündemin yoğunluğuna göre EN AZ 3, EN FAZLA 6 benzersiz madde çıkar. 
-    5. SIRALAMA: Türkiye gündemindeki etki gücüne (impact) göre sırala.
-    6. ÜSLUP: Başlıklar maksimum 6 kelime, detaylar 2-3 cümle. 
-    """
+Aşağıda SON GÜNCELLEMEDEN BU YANA sisteme düşmüş olan SADECE YENİ HABERLER (DELTA HAVUZU) bulunuyor:
+{news_text}
+
+Aşağıda ise sistemde kayıtlı olan MEVCUT GÜNDEM bulunuyor (Bu veri, önceki çalıştırmada üretilmiş JSON'daki `detailed_summary` listesidir):
+{prev_context}
+
+GÖREVİN VE EDİTORYAL KURALLAR:
+
+0. BOŞ DELTA KONTROLÜ:
+Eğer Delta Havuzu boşsa doğrudan:
+{{"has_changes": false}}
+JSON'unu döndür ve işlemi bitir.
+
+1. KESİN ÇIKTI FORMATI:
+Yanıtın SADECE VE SADECE geçerli bir JSON olmalıdır.
+- Markdown (```json) kullanma.
+- Kod bloğu kullanma.
+- Açıklama yazma.
+- Ön metin yazma.
+- Sadece ham JSON string'i döndür.
+
+2. KARAR AKIŞI (ÇOK KRİTİK):
+Önce Delta Havuzu ile Mevcut Gündemi karşılaştır.
+Önce değişiklik gerekip gerekmediğine karar ver.
+Daha sonra yalnızca uygun JSON çıktısını üret.
+JSON'u üretmeden önce editoryal kararını tamamla.
+
+3. HARMANLAMA VE HAFIZA (KRİTİK):
+"MEVCUT GÜNDEM" senin ana listendir.
+
+Listeyi sıfırdan oluşturma.
+
+Mevcut gündemdeki `title` alanları o olayların değişmez kimliğidir (ID).
+
+Bir olay mevcut listede bulunuyorsa:
+- `title` KESİNLİKLE değiştirilmeyecektir.
+- Yeni bilgi varsa yalnızca `desc` güncellenebilir.
+- Yeni bilgi yoksa `desc` değiştirilmemelidir.
+- Başlıkları yeniden yazma.
+
+4. KAYNAK BAŞLIKLARI (source_titles):
+`source_titles`, o olaya ait tüm geçerli RSS başlıklarının birleşimidir.
+
+Güncelleme sırasında:
+- yalnızca aynı olaya ait yeni ve gerçek RSS başlıklarını ekle,
+- mevcut ilgili başlıkları koru,
+- aynı başlığı ikinci kez ekleme,
+- farklı olaylara ait başlıkları aynı dizide birleştirme,
+
+5. ANLAMLI GELİŞME KRİTERİ:
+Aynı olay için yalnızca farklı kaynaklardan haberler geldiyse fakat kamuoyu açısından anlamlı yeni bir gelişme yoksa `has_changes=false` döndür.
+
+RSS akışındaki ufak kelime değişikliklerine, tekrar haberlere ve farklı kaynakların aynı olayı yeniden yayınlamasına kanma.
+
+6. OLAY BİRLEŞTİRME (DEDUPLICATION):
+Aynı olaya ait farklı RSS başlıklarını tek maddede birleştir.
+
+Bir olay için listede yalnızca BİR madde bulunmalıdır.
+
+7. LİSTE BOYUTU:
+Bu kural yalnızca `has_changes=true` olduğunda oluşturulan `detailed_summary` için geçerlidir.
+
+Nihai liste:
+- en az 4,
+- en fazla 6 maddeden oluşmalıdır.
+
+8. KIYASLAMA VE STABİLİTE:
+Yeni bir olay, mevcut listedeki en düşük öncelikli olaydan DAHA ÖNEMLİ DEĞİLSE listeye eklenmeyecektir.
+
+Yeni olay ile mevcut listedeki en düşük öncelikli olay benzer önem seviyesindeyse mevcut liste korunmalıdır.
+
+Kararsız kalınan tüm durumlarda mevcut gündemi koru.
+
+Nihai listeyi önem derecesine göre sırala.
+
+Ancak mevcut sıralamayı yalnızca önem dengesi gerçekten değişmişse değiştir.
+
+Benzer önemdeki olayların sırası korunmalıdır.
+
+9. KAYNAKLAR ÖZETİ (sources_used):
+`sources_used` alanına yalnızca nihai listedeki haberlerde kullanılan haber kuruluşlarının benzersiz adlarını yaz.
+
+Örnek:
+AA • Reuters • BBC • TRT Haber
+
+Aynı kaynak adını tekrar etme.
+
+10. DEĞİŞTİRME KARARI VE ÇIKTI OPTİMİZASYONU:
+
+`has_changes=true` yalnızca şu durumlarda döndürülmelidir:
+- Listeye gerçekten daha önemli yeni bir olay girdiyse.
+- Mevcut önemli bir olayda kamuoyu açısından anlamlı yeni bir gelişme oluştuysa.
+
+Bunun dışındaki tüm durumlarda:
+{{"has_changes": false}}
+JSON'unu döndür.
+
+Eğer `has_changes=false` ise başka hiçbir alan döndürme.
+
+GÖREVİ TAMAMLAMAK İÇİN AŞAĞIDAKİ JSON ŞABLONLARINDAN DURUMA UYGUN OLANI KULLAN.
+
+DURUM A:
+
+{{
+    "has_changes": false
+}}
+
+DURUM B:
+
+{{
+    "has_changes": true,
+    "detailed_summary": [
+        {{
+            "title": "Vurucu Kısa Başlık",
+            "desc": "Detaylı açıklama.",
+            "source_titles": [
+                "Ham RSS başlığı 1",
+                "Ham RSS başlığı 2"
+            ]
+        }}
+    ],
+    "sources_used": "AA • Reuters • BBC"
+}}
+"""
 
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
     try:
@@ -168,6 +284,11 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
             prev_texts.append(f"{p_title} {p_title} {p_desc}")
 
     for item in summary_data.get("detailed_summary", []):
+        # Eğer optional olduğu için gelmediyse hata vermemesi için boş liste ataması
+        if not item: continue
+        
+        raw_titles = item.get("source_titles", [])
+        item["source_titles"] = list(dict.fromkeys(raw_titles))[-10:]
         source_titles = item.get("source_titles", [])
         source_links = []
         
@@ -193,12 +314,13 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
         # KATMAN 2: METİN BENZERLİĞİ (FALLBACK)
         c_title = item.get("title", "").strip().lower()
         c_desc = item.get("desc", "").strip().lower()
-        current_text = f"{c_title} {c_title} {c_desc}" 
+        current_text = f"{c_title} {c_desc}"
 
         is_new_layer2 = True
         for p_text in prev_texts:
-            similarity = difflib.SequenceMatcher(None, current_text, p_text).ratio()
-            if similarity > 0.60: 
+            # difflib 0.0 ile 1.0 arası değer dönerken, rapidfuzz 0 ile 100 arası döner
+            score = fuzz.token_set_ratio(current_text, p_text)
+            if score > 75: 
                 is_new_layer2 = False
                 break 
 
@@ -227,8 +349,8 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
             "end": now_tr.isoformat(timespec='seconds')
         },
         "scanned_count": scanned_count,
-        "items": summary_data.get('detailed_summary', []),
-        "sources": summary_data.get('sources_used', '')
+        "items": summary_data.get('detailed_summary') or [],
+        "sources": summary_data.get('sources_used') or ""
     }
 
     latest_path = os.path.join(output_dir, "hourly_latest.json")
