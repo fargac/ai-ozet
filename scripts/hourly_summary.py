@@ -5,6 +5,7 @@ import time
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 from google import genai
+from bs4 import BeautifulSoup
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -42,15 +43,17 @@ def get_todays_news():
                     pub_date = pub_date.replace(tzinfo=timezone.utc)
 
                 if pub_date >= today_start:
-                    # YENİ: Haberin açıklamasını (içeriğini) de RSS'ten çekiyoruz
-                    desc = entry.get('summary', entry.get('description', ''))
-                    # HTML etiketlerinden arındırılmış temiz metnin ilk 250 karakteri bağlam için yeterlidir
-                    clean_desc = desc.replace('\n', ' ').strip()
+                    raw_desc = entry.get('summary', entry.get('description', ''))
+                    
+                    # HTML temizliği: BeautifulSoup ile tüm gereksiz etiketleri uçuruyoruz
+                    clean_desc = BeautifulSoup(raw_desc, "html.parser").get_text(separator=' ', strip=True)
+                    # Sadece ilk 300 karakteri alıyoruz (Token tasarrufu ve net bağlam için)
+                    clean_desc = clean_desc[:300]
                     
                     today_news_list.append({
                         "source": source['name'], 
                         "title": entry.title,
-                        "desc": clean_desc # Bağlama eklendi
+                        "desc": clean_desc
                     })
         except Exception as e:
             print(f"❌ {source['name']} okunurken hata: {e}")
@@ -58,11 +61,9 @@ def get_todays_news():
     return today_news_list
 
 def generate_ai_summary(news_data, use_fallback=False):
-    # Modeller listene göre güncellendi: Ana model 3.5-flash, fallback (yedek) model 2.5-flash
     model_name = 'gemini-3.5-flash' if use_fallback else 'gemini-2.5-flash'
     print(f"🤖 Yapay zeka modeli olarak '{model_name}' deneniyor...")
     
-    # YENİ: Sadece başlık değil, detay da modele gönderiliyor
     news_text = "\n".join([f"- [{n['source']}] {n['title']} (Detay: {n['desc']})" for n in news_data])
     
     prompt = f"""
@@ -72,22 +73,18 @@ def generate_ai_summary(news_data, use_fallback=False):
     {news_text}
 
     GÖREVİN VE EDİTORYAL KURALLAR:
-    1. SEÇİM: Gündemi en çok etkileyen, toplumda, ekonomide veya siyasette en çok yankı uyandıran en hayati 6 benzersiz gelişmeyi seç. (Mükerrer/aynı olayı anlatan haberleri birleştirerek tek madde yap).
-    2. SIRALAMA (ÇOK KRİTİK): Seçtiğin 6 maddeyi yayınlanma saatine göre DEĞİL, Türkiye gündemindeki önem derecesine ve etki gücüne (impact) göre sırala. Gündemi sarsan en kritik olay KESİNLİKLE 1. sırada yer almalı, diğerleri önem sırasına göre azalmalıdır.
+    1. SEÇİM: Gündemi en çok etkileyen, toplumda, ekonomide veya siyasette en çok yankı uyandıran gelişmeleri seç. Mükerrer haberleri tekilleştir. Gündemin yoğunluğuna göre EN AZ 3, EN FAZLA 6 benzersiz madde çıkar. Sırf 6 maddeyi doldurmak için zorlama veya önemsiz olayları ekleme.
+    2. SIRALAMA (ÇOK KRİTİK): Seçtiğin maddeleri yayınlanma saatine göre DEĞİL, Türkiye gündemindeki önem derecesine ve etki gücüne (impact) göre sırala. Gündemi sarsan en kritik olay KESİNLİKLE 1. sırada yer almalı.
     3. ÜSLUP: Objektif, net ve tık tuzağı (clickbait) içermeyen prestijli bir dil kullan. Başlıklar kısa ve vurucu (maksimum 6 kelime), detaylar ise doyurucu olmalı (5N1K kuralına uygun 2-3 cümle).
-    4. KESİNLİK VE DOĞRULUK (ÇOK ÖNEMLİ): Haber başlığında veya detayında AÇIKÇA belirtilmeyen HİÇBİR kişi, kurum, takım veya mekan adını ASLA tahmin etme. Bilgiyi sadece sana verilen metinden al. Eğer bir transfer veya anlaşma haberi varsa, tarafı kendi kendine uydurma.
+    4. KESİNLİK VE DOĞRULUK: Haber başlığında veya detayında AÇIKÇA belirtilmeyen HİÇBİR kişi, kurum, takım veya mekan adını ASLA tahmin etme. Bilgiyi sadece sana verilen metinden al.
 
     Yanıtı SADECE ve EKSİKSİZ aşağıdaki JSON formatında ver. JSON dışında tek bir kelime bile açıklama yazma:
     {{
         "push_title": "📅 Günün Özeti: Gündemde Neler Oluyor?",
-        "push_body": "[Buraya seçtiğin o en önemli 1. haberin dikkat çekici ve merak uyandırıcı tek cümlelik özetini yaz, çünkü bu bildirim olarak gidecek]",
+        "push_body": "[Buraya seçtiğin o en önemli 1. haberin dikkat çekici ve merak uyandırıcı tek cümlelik özetini yaz]",
         "detailed_summary": [
-            {{"title": "1. Haberin Vurucu Kısa Başlığı", "desc": "En önemli haberin detaylı, net ve doyurucu açıklaması."}},
-            {{"title": "2. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
-            {{"title": "3. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
-            {{"title": "4. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
-            {{"title": "5. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}},
-            {{"title": "6. Haberin Vurucu Kısa Başlığı", "desc": "Detay açıklaması."}}
+            {{"title": "1. Haberin Vurucu Kısa Başlığı", "desc": "En önemli haberin detaylı, net ve doyurucu açıklaması."}}
+            // (Maddeleri buraya ekle. Toplamda 3 ile 6 madde arasında olsun.)
         ],
         "sources_used": "Kaynak 1 • Kaynak 2 • Kaynak 3"
     }}
@@ -103,11 +100,9 @@ def generate_ai_summary(news_data, use_fallback=False):
         return json.loads(response.text)
     except Exception as e:
         error_str = str(e)
-        # Fallback mantığındaki print mesajı güncellendi
         if not use_fallback and ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str):
             print(f"⚠️ {model_name} kotası doldu! Beklemeden otomatik olarak gemini-2.5-flash modeline geçiliyor...")
             return generate_ai_summary(news_data, use_fallback=True)
-        
         raise e
 
 def save_to_cdn(summary_data, scanned_count):
