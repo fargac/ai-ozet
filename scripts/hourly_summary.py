@@ -2,7 +2,6 @@ import os
 import json
 import feedparser
 import time
-import requests
 import difflib
 from datetime import datetime, timezone, timedelta  
 from dateutil import parser as date_parser
@@ -74,33 +73,31 @@ def get_todays_news():
     return today_news_list
 
 def get_previous_summary():
-    cdn_url = os.environ.get("CDN_JSON_URL")
-    if not cdn_url:
-        return None
-    try:
-        # 🔥 CLOUDFLARE CACHE BUSTING
-        cache_buster_url = f"{cdn_url}?t={int(time.time())}"
-        resp = requests.get(cache_buster_url, timeout=10)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as e:
-        print(f"⚠️ Önceki özet çekilemedi: {e}")
+    """Önceki özeti Cloudflare yerine doğrudan Github Reposundaki lokal dosyadan okur."""
+    local_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'cdn_data', 'summaries', 'hourly_latest.json'
+    )
+    if os.path.exists(local_path):
+        try:
+            with open(local_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"⚠️ Lokal önceki özet okunamadı: {e}")
     return None
 
 def get_seen_links_cache():
-    """R2'den (CDN) daha önce işlenmiş linklerin listesini çeker."""
-    cdn_url = os.environ.get("CDN_CACHE_URL")
-    if not cdn_url:
-        print("⚠️ CDN_CACHE_URL bulunamadı. Cache boş varsayılıyor.")
-        return []
-    try:
-        # 🔥 CLOUDFLARE CACHE BUSTING
-        cache_buster_url = f"{cdn_url}?t={int(time.time())}"
-        resp = requests.get(cache_buster_url, timeout=10)
-        if resp.status_code == 200:
-            return resp.json().get("seen_links", [])
-    except Exception as e:
-        print(f"⚠️ Link cache çekilemedi: {e}")
+    """Hafızayı Cloudflare (HTTP 404) yerine doğrudan Github Reposundaki lokal dosyadan okur."""
+    local_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        'cdn_data', 'summaries', 'seen_links_cache.json'
+    )
+    if os.path.exists(local_path):
+        try:
+            with open(local_path, 'r', encoding='utf-8') as f:
+                return json.load(f).get("seen_links", [])
+        except Exception as e:
+            print(f"⚠️ Lokal link cache okunamadı: {e}")
     return []
 
 def generate_ai_summary(new_news_data, previous_summary_data=None, use_fallback=False):
