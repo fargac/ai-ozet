@@ -26,8 +26,9 @@ jobs:
 
       - name: Saatlik Ozeti Hazirla
         env:
+          PYTHONUNBUFFERED: "1"  # 🔥 YENİ: Logları saniye saniye ekrana bas!
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python -u scripts/hourly_summary.py
+        run: python scripts/hourly_summary.py
 
       - name: R2'ye Yukle
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
