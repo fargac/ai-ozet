@@ -17,8 +17,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip' # ⚡ Bağımlılıkları önbelleğe alarak hızı artırır
 
-      # YENİ: beautifulsoup4 ve requests kütüphaneleri eklendi
       - name: Kutuphaneleri Yukle
         run: |
           python -m pip install --upgrade pip
@@ -28,9 +28,9 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CDN_JSON_URL: "https://api.gezoist.com/hourly_latest.json"
+          CDN_CACHE_URL: "https://api.gezoist.com/seen_links_cache.json"
         run: python scripts/hourly_summary.py
 
-      # YENİ: Sadece .upload_ready dosyası varsa (yani gündem değiştiyse) R2'ye yükle
       - name: R2'ye Yukle
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
         env:
@@ -39,11 +39,11 @@ jobs:
           AWS_DEFAULT_REGION: auto
         run: |
           aws s3 cp cdn_data/summaries/hourly_latest.json s3://gezo-data/hourly_summary.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+          aws s3 cp cdn_data/summaries/seen_links_cache.json s3://gezo-data/seen_links_cache.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
 
-      # YENİ: Sadece gündem değiştiyse GitHub'a commit at
       - name: Github'a Pushla
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "feat(cdn): Saatlik ozet (hourly_summary.json) guncellendi"
-          file_pattern: 'cdn_data/summaries/hourly_latest.json'
+          commit_message: "feat(cdn): Saatlik ozet ve link cache guncellendi"
+          file_pattern: 'cdn_data/summaries/*.json'
