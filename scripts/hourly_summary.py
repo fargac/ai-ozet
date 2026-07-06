@@ -2,6 +2,7 @@ import os
 import json
 import feedparser
 import time
+import requests
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 from google import genai
@@ -45,10 +46,9 @@ def get_todays_news():
                 if pub_date >= today_start:
                     raw_desc = entry.get('summary', entry.get('description', ''))
                     
-                    # HTML temizliği: BeautifulSoup ile tüm gereksiz etiketleri uçuruyoruz
+                    # 🧹 HTML TEMİZLİĞİ: BeautifulSoup ile gereksiz etiketleri (reklam, görsel vb.) uçuruyoruz.
                     clean_desc = BeautifulSoup(raw_desc, "html.parser").get_text(separator=' ', strip=True)
-                    # Sadece ilk 300 karakteri alıyoruz (Token tasarrufu ve net bağlam için)
-                    clean_desc = clean_desc[:300]
+                    clean_desc = clean_desc[:300] # Token tasarrufu için ilk 300 karakter yeterli
                     
                     today_news_list.append({
                         "source": source['name'], 
@@ -60,33 +60,58 @@ def get_todays_news():
 
     return today_news_list
 
-def generate_ai_summary(news_data, use_fallback=False):
+def get_previous_summary():
+    """GitHub Actions sanal makinesi her defasında sıfırlandığı için, bir önceki özeti canlı CDN'den okuruz."""
+    cdn_url = os.environ.get("CDN_JSON_URL")
+    if not cdn_url:
+        print("⚠️ CDN_JSON_URL bulunamadı. Sistem hafızasız (sıfırdan) çalışacak.")
+        return None
+    
+    try:
+        resp = requests.get(cdn_url, timeout=10)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        print(f"⚠️ Önceki özet çekilemedi: {e}")
+    return None
+
+def generate_ai_summary(news_data, previous_summary_data=None, use_fallback=False):
     model_name = 'gemini-3.5-flash' if use_fallback else 'gemini-2.5-flash'
     print(f"🤖 Yapay zeka modeli olarak '{model_name}' deneniyor...")
     
     news_text = "\n".join([f"- [{n['source']}] {n['title']} (Detay: {n['desc']})" for n in news_data])
     
+    prev_context = ""
+    if previous_summary_data and "items" in previous_summary_data:
+        prev_text = json.dumps(previous_summary_data["items"], ensure_ascii=False, indent=2)
+        prev_context = f"\nBİR ÖNCEKİ SAATİN ÖZETİ (HAFIZA YARDIMI):\n{prev_text}\n"
+
     prompt = f"""
-    Sen Gezo Gündem uygulamasının Kıdemli Genel Yayın Yönetmenisin. Amacın, yoğun insanlara günün en kritik gelişmeleri hakkında kusursuz bir "Yönetici Özeti (Executive Briefing)" sunmak.
+    Sen Gezo Gündem uygulamasının Kıdemli Genel Yayın Yönetmenisin.
     
-    Aşağıda Türkiye'nin en büyük kaynaklarından toplanmış son 24 saatin haber havuzu (Başlık ve Detaylar) bulunuyor:
+    Aşağıda Türkiye'nin en büyük kaynaklarından toplanmış YENİ HABER HAVUZU bulunuyor:
     {news_text}
+    {prev_context}
 
     GÖREVİN VE EDİTORYAL KURALLAR:
-    1. SEÇİM: Gündemi en çok etkileyen, toplumda, ekonomide veya siyasette en çok yankı uyandıran gelişmeleri seç. Mükerrer haberleri tekilleştir. Gündemin yoğunluğuna göre EN AZ 3, EN FAZLA 6 benzersiz madde çıkar. Sırf 6 maddeyi doldurmak için zorlama veya önemsiz olayları ekleme.
-    2. SIRALAMA (ÇOK KRİTİK): Seçtiğin maddeleri yayınlanma saatine göre DEĞİL, Türkiye gündemindeki önem derecesine ve etki gücüne (impact) göre sırala. Gündemi sarsan en kritik olay KESİNLİKLE 1. sırada yer almalı.
-    3. ÜSLUP: Objektif, net ve tık tuzağı (clickbait) içermeyen prestijli bir dil kullan. Başlıklar kısa ve vurucu (maksimum 6 kelime), detaylar ise doyurucu olmalı (5N1K kuralına uygun 2-3 cümle).
-    4. KESİNLİK VE DOĞRULUK: Haber başlığında veya detayında AÇIKÇA belirtilmeyen HİÇBİR kişi, kurum, takım veya mekan adını ASLA tahmin etme. Bilgiyi sadece sana verilen metinden al.
+    1. KIYASLAMA VE HAFIZA: Sana verilen 'Bir Önceki Saatin Özeti' ile 'Yeni Haber Havuzu'nu kıyasla. Gündemi sarsacak, mevcut sıralamayı değiştirecek veya listeye girmeyi hak edecek kadar ÖNEMLİ YENİ BİR GELİŞME YOKSA, JSON'da sadece {{"has_changes": false}} döndür ve işlemi bitir.
+    2. YENİ GELİŞME VARSA: Eğer listeye girecek kadar önemli yeni bir gelişme varsa {{"has_changes": true}} döndür. Yeni gelişmeyi listeye ekle, yer açmak için en önemsiz eski maddeyi listeden çıkar.
+    3. YENİ ETİKETİ (ÇOK KRİTİK): SADECE yeni eklediğin ve bir önceki özette ASLA olmayan o yeni maddenin içine `"is_new": true` ekle. Eski maddelerde bu alan `false` olsun.
+    4. SEÇİM: Gündemin yoğunluğuna göre EN AZ 3, EN FAZLA 6 benzersiz madde çıkar. Zorlama madde üretme.
+    5. SIRALAMA: Yayınlanma saatine göre DEĞİL, Türkiye gündemindeki etki gücüne (impact) göre sırala.
+    6. ÜSLUP: Başlıklar maksimum 6 kelime, detaylar 2-3 cümle (5N1K kuralına uygun). Asla metinde olmayan bir şeyi uydurma.
 
-    Yanıtı SADECE ve EKSİKSİZ aşağıdaki JSON formatında ver. JSON dışında tek bir kelime bile açıklama yazma:
+    Yanıtı SADECE ve EKSİKSİZ aşağıdaki JSON formatında ver:
     {{
-        "push_title": "📅 Günün Özeti: Gündemde Neler Oluyor?",
-        "push_body": "[Buraya seçtiğin o en önemli 1. haberin dikkat çekici ve merak uyandırıcı tek cümlelik özetini yaz]",
+        "has_changes": true veya false,
         "detailed_summary": [
-            {{"title": "1. Haberin Vurucu Kısa Başlığı", "desc": "En önemli haberin detaylı, net ve doyurucu açıklaması."}}
-            // (Maddeleri buraya ekle. Toplamda 3 ile 6 madde arasında olsun.)
+            {{
+                "title": "Vurucu Kısa Başlık", 
+                "desc": "Detaylı açıklama.",
+                "is_new": true veya false
+            }}
         ],
-        "sources_used": "Kaynak 1 • Kaynak 2 • Kaynak 3"
+        "sources_used": "Kaynak 1 • Kaynak 2"
     }}
     """
 
@@ -101,8 +126,8 @@ def generate_ai_summary(news_data, use_fallback=False):
     except Exception as e:
         error_str = str(e)
         if not use_fallback and ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str):
-            print(f"⚠️ {model_name} kotası doldu! Beklemeden otomatik olarak gemini-2.5-flash modeline geçiliyor...")
-            return generate_ai_summary(news_data, use_fallback=True)
+            print(f"⚠️ {model_name} kotası doldu! gemini-2.5-flash modeline geçiliyor...")
+            return generate_ai_summary(news_data, previous_summary_data, use_fallback=True)
         raise e
 
 def save_to_cdn(summary_data, scanned_count):
@@ -125,8 +150,8 @@ def save_to_cdn(summary_data, scanned_count):
             "end": now_tr.isoformat(timespec='seconds')
         },
         "scanned_count": scanned_count,
-        "items": summary_data['detailed_summary'],
-        "sources": summary_data['sources_used']
+        "items": summary_data.get('detailed_summary', []),
+        "sources": summary_data.get('sources_used', '')
     }
 
     latest_path = os.path.join(output_dir, "hourly_latest.json")
@@ -134,6 +159,10 @@ def save_to_cdn(summary_data, scanned_count):
         json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
 
     print(f"📦 CDN dosyası güncellendi: {latest_path}")
+    
+    # Değişiklik olduğunu GitHub Action'a bildirmek için ufak bir bayrak (flag) dosyası oluşturuyoruz
+    with open(os.path.join(output_dir, ".upload_ready"), 'w') as f:
+        f.write("ready")
 
 if __name__ == "__main__":
     raw_news = get_todays_news()
@@ -143,14 +172,23 @@ if __name__ == "__main__":
         exit(0)
 
     total_scanned = len(raw_news)
+    
+    # 1. Önceki özeti CDN'den çek
+    prev_summary = get_previous_summary()
     last_error = None
 
     for deneme in range(4):
         try:
             print(f"🔄 Deneme {deneme + 1}/4...")
-            summary = generate_ai_summary(raw_news)
+            summary = generate_ai_summary(raw_news, prev_summary)
+            
+            # 2. Değişiklik yoksa R2/CDN'e boşuna yazma, React Native tarafını gereksiz tetikleme
+            if summary.get("has_changes") is False:
+                print("🛑 Gündemde önemli bir değişiklik yok. Yeni json üretilmeyecek ve R2'ye yükleme yapılmayacak.")
+                exit(0)
+                
             save_to_cdn(summary, total_scanned)
-            print("✅ SAATLİK YAPAY ZEKA ÖZETİ BAŞARIYLA OLUŞTURULDU!")
+            print("✅ SAATLİK YAPAY ZEKA ÖZETİ (YENİ MADDELERLE) BAŞARIYLA OLUŞTURULDU!")
             break
         except Exception as e:
             last_error = e
