@@ -27,9 +27,7 @@ jobs:
       - name: Saatlik Ozeti Hazirla
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CDN_JSON_URL: "https://api.gezoist.com/hourly_latest.json"
-          CDN_CACHE_URL: "https://api.gezoist.com/seen_links_cache.json"
-        run: python scripts/hourly_summary.py
+        run: python -u scripts/hourly_summary.py
 
       - name: R2'ye Yukle
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
