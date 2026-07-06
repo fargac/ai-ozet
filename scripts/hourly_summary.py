@@ -143,7 +143,7 @@ def generate_ai_summary(new_news_data, previous_summary_data=None, use_fallback=
         return json.loads(response.text)
     except Exception as e:
         error_str = str(e)
-        if not use_fallback and ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str):
+        if not use_fallback and ("429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "503" in error_str or "UNAVAILABLE" in error_str):
             print(f"⚠️ {model_name} kotası doldu! {fallback_model} modeline geçiliyor...")
             return generate_ai_summary(new_news_data, previous_summary_data, use_fallback=True)
         raise e
