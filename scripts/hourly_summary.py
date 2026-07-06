@@ -4,10 +4,10 @@ import feedparser
 import time
 import requests
 import difflib
-from datetime import datetime, timezone, timedelta  # Eski çalışan yönteme geri dönüldü
+from datetime import datetime, timezone, timedelta  
 from dateutil import parser as date_parser
 from google import genai
-from pydantic import BaseModel, Field  # Tip güvenliği ve kesin şema için
+from pydantic import BaseModel, Field  
 from bs4 import BeautifulSoup
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
@@ -78,7 +78,9 @@ def get_previous_summary():
     if not cdn_url:
         return None
     try:
-        resp = requests.get(cdn_url, timeout=10)
+        # 🔥 CLOUDFLARE CACHE BUSTING
+        cache_buster_url = f"{cdn_url}?t={int(time.time())}"
+        resp = requests.get(cache_buster_url, timeout=10)
         if resp.status_code == 200:
             return resp.json()
     except Exception as e:
@@ -92,7 +94,9 @@ def get_seen_links_cache():
         print("⚠️ CDN_CACHE_URL bulunamadı. Cache boş varsayılıyor.")
         return []
     try:
-        resp = requests.get(cdn_url, timeout=10)
+        # 🔥 CLOUDFLARE CACHE BUSTING
+        cache_buster_url = f"{cdn_url}?t={int(time.time())}"
+        resp = requests.get(cache_buster_url, timeout=10)
         if resp.status_code == 200:
             return resp.json().get("seen_links", [])
     except Exception as e:
@@ -100,7 +104,6 @@ def get_seen_links_cache():
     return []
 
 def generate_ai_summary(new_news_data, previous_summary_data=None, use_fallback=False):
-    # Ana model ve Fallback model rolleri yer değiştirildi
     main_model = 'gemini-3.5-flash'
     fallback_model = 'gemini-2.5-flash'
     model_name = fallback_model if use_fallback else main_model
@@ -137,7 +140,7 @@ def generate_ai_summary(new_news_data, previous_summary_data=None, use_fallback=
             contents=prompt,
             config=genai.types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=SummaryResponse  # Kesin çıktı formatı şeması
+                response_schema=SummaryResponse 
             )
         )
         return json.loads(response.text)
@@ -281,7 +284,6 @@ if __name__ == "__main__":
             if summary.get("has_changes") is False:
                 print("🛑 Yeni haberler var ama gündemi değiştirecek kadar önemli değil. Sadece cache güncelleniyor.")
                 
-                # 🛡️ SIZINTI ÖNLEME ADIMI: Gündem değişmediyse mevcut özeti aynen koruyoruz.
                 fallback_summary_data = {
                     "detailed_summary": prev_summary.get("items", []) if prev_summary else [],
                     "sources_used": prev_summary.get("sources", "") if prev_summary else ""
@@ -290,7 +292,6 @@ if __name__ == "__main__":
                 print("✅ Gündem korunarak yeni linkler hafızaya (cache) alındı!")
                 break
 
-            # Önemli yeni gelişme varsa hibrit katman doğrulaması başlar
             summary = resolve_is_new_hybrid(summary, raw_news, prev_summary)
 
             save_to_cdn(summary, total_scanned, raw_news, seen_links)
