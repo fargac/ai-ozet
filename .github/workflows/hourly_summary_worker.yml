@@ -3,6 +3,12 @@ name: Gezo Gundem Saatlik Ozet
 on:
   workflow_dispatch:
 
+# 🔥 YENİ: Concurrency Koruması eklendi.
+# Aynı anda iki workflow tetiklenirse, çakışmayı önlemek için sıraya koyar.
+concurrency:
+  group: hourly-summary
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -24,7 +30,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 🔥 Google Cloud Kimlik Bilgilerini Hazırla
+      # 🔥 DÜZELTME: Google Cloud Kimlik Bilgilerini env üzerinden aktararak güvenliği artırma
       - name: Google Cloud Kimlik Bilgilerini Olustur
         env:
           GCP_CREDENTIALS_JSON: ${{ secrets.GCP_CREDENTIALS_JSON }}
@@ -48,7 +54,6 @@ jobs:
           aws s3 cp cdn_data/summaries/seen_links_cache.json s3://gezo-data/seen_links_cache.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
 
           # 🔥 DÜZELTME: mp3 dosyaları sadece bu run'da gerçekten üretildiyse (has_changes=true) var olur.
-          # "Sadece cache güncelle" dalında üretilmedikleri için varlık kontrolü olmadan komut patlar.
           if [ -f cdn_data/summaries/summary_male.mp3 ]; then
             aws s3 cp cdn_data/summaries/summary_male.mp3 s3://gezo-data/summary_male.mp3 --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
           else

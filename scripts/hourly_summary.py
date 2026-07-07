@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from bs4 import BeautifulSoup
 from rapidfuzz import fuzz
-from google.cloud import texttospeech # 🔥 YENİ: Google TTS Kütüphanesi
+from google.cloud import texttospeech
 import re
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
@@ -237,7 +237,9 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
             
             p_title = item.get("title", "").strip().lower()
             p_desc = item.get("desc", "").strip().lower()
-            prev_texts.append(f"{p_title} {p_title} {p_desc}")
+            
+            # 🔥 DÜZELTME: p_title'ı iki kez eklemek rapidfuzz'da anlamsızdı (token_set_ratio tekrarı eler). Sadeleştirildi.
+            prev_texts.append(f"{p_title} {p_desc}")
 
     for item in summary_data.get("detailed_summary", []):
         if not item: continue
@@ -280,7 +282,6 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
 
     return summary_data
 
-# 🔥 YENİ: MP3 Üretim Fonksiyonu
 def generate_tts_audio(summary_items, output_dir):
     if not summary_items:
         return
@@ -302,8 +303,8 @@ def generate_tts_audio(summary_items, output_dir):
     synthesis_input = texttospeech.SynthesisInput(text=text_to_read)
 
     voice_profiles = {
-        "summary_male.mp3": "tr-TR-Chirp3-HD-Fenrir",  # Fenrir erkek modelidir
-        "summary_female.mp3": "tr-TR-Chirp3-HD-Zephyr" # Zephyr kadın modelidir
+        "summary_male.mp3": "tr-TR-Chirp3-HD-Fenrir", 
+        "summary_female.mp3": "tr-TR-Chirp3-HD-Zephyr" 
     }
 
     for filename, voice_name in voice_profiles.items():
@@ -359,8 +360,10 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
         json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
     print(f"📦 Özet dosyası güncellendi: {latest_path}")
 
-    updated_seen_links = list(set(previous_seen_links).union(set([n['link'] for n in all_raw_news])))
-    updated_seen_links = updated_seen_links[-2000:]
+    # 🔥 DÜZELTME: Set kullanımı sonucu kronolojik sıralama kaybı (Bug) düzeltildi.
+    # Önce listeler kronolojik olarak uç uca ekleniyor, sonra dict.fromkeys ile SIRA KORUNARAK tekilleştiriliyor.
+    combined_links = previous_seen_links + [n['link'] for n in all_raw_news]
+    updated_seen_links = list(dict.fromkeys(combined_links))[-2000:]
     
     cache_path = os.path.join(output_dir, "seen_links_cache.json")
     with open(cache_path, 'w', encoding='utf-8') as f:
@@ -401,8 +404,13 @@ if __name__ == "__main__":
             if summary.get("has_changes") is False:
                 print("🛑 Yeni haberler var ama gündemi değiştirecek kadar önemli değil. Sadece cache güncelleniyor.")
                 
+                # 🔥 DÜZELTME: Eski özette asılı kalan "YENİ" ibarelerini (is_new bayrağını) temizleme
+                fallback_items = prev_summary.get("items", []) if prev_summary else []
+                for item in fallback_items:
+                    item["is_new"] = False # Gündem değişmediyse artık yeni değiller
+                
                 fallback_summary_data = {
-                    "detailed_summary": prev_summary.get("items", []) if prev_summary else [],
+                    "detailed_summary": fallback_items,
                     "sources_used": prev_summary.get("sources", "") if prev_summary else ""
                 }
                 save_to_cdn(fallback_summary_data, total_scanned, raw_news, seen_links)
@@ -411,7 +419,6 @@ if __name__ == "__main__":
 
             summary = resolve_is_new_hybrid(summary, raw_news, prev_summary)
 
-            # 🔥 YENİ: CDN'e kaydetmeden hemen önce MP3'leri oluşturuyoruz
             output_dir = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                 'cdn_data', 'summaries'
