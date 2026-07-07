@@ -251,10 +251,13 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
         
         for t in source_titles:
             clean_t = t.strip().lower()
+            best_link, best_score = None, 0
             for raw_title, raw_link in title_to_link.items():
-                if clean_t in raw_title or raw_title in clean_t:
-                    source_links.append(raw_link)
-                    break 
+                score = fuzz.ratio(clean_t, raw_title)
+                if score > best_score:
+                    best_score, best_link = score, raw_link
+            if best_score >= 90:
+                source_links.append(best_link)
 
         item["source_links"] = list(set(source_links))
 
