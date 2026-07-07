@@ -2,7 +2,6 @@ import os
 import json
 import feedparser
 import time
-import difflib
 from datetime import datetime, timezone, timedelta  
 from dateutil import parser as date_parser
 from google import genai
@@ -11,6 +10,7 @@ from typing import Optional, List
 from bs4 import BeautifulSoup
 from rapidfuzz import fuzz
 from google.cloud import texttospeech # 🔥 YENİ: Google TTS Kütüphanesi
+import re
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -291,7 +291,8 @@ def generate_tts_audio(summary_items, output_dir):
     for item in summary_items:
         text_to_read += f"{item['title']}. {item['desc']} . "
     text_to_read += "Şimdilik gelişmeler bu kadar, dinlediğiniz için teşekkürler."
-
+    text_to_read = text_to_read.replace("'", "").replace("’", "").replace('"', '')
+    text_to_read = re.sub(r'([A-Za-zÇÖĞÜŞİçöğüşı]+)-(\d+)', r'\1 \2', text_to_read)
     try:
         client = texttospeech.TextToSpeechClient()
     except Exception as e:
