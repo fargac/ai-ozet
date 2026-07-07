@@ -24,9 +24,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 🔥 YENİ: Google Cloud Kimlik Bilgilerini Hazırla
+      # 🔥 Google Cloud Kimlik Bilgilerini Hazırla
       - name: Google Cloud Kimlik Bilgilerini Olustur
-        run: echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > gcp_auth.json
+        env:
+          GCP_CREDENTIALS_JSON: ${{ secrets.GCP_CREDENTIALS_JSON }}
+        run: echo "$GCP_CREDENTIALS_JSON" > gcp_auth.json
 
       - name: Saatlik Ozeti Hazirla
         env:
@@ -44,10 +46,20 @@ jobs:
         run: |
           aws s3 cp cdn_data/summaries/hourly_latest.json s3://gezo-data/hourly_summary.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
           aws s3 cp cdn_data/summaries/seen_links_cache.json s3://gezo-data/seen_links_cache.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
-          
-          # 🔥 YENİ: Ses Dosyalarını Yükle (Mime tipleri AWS CLI tarafından otomatik MP3 olarak ayarlanır)
-          aws s3 cp cdn_data/summaries/summary_male.mp3 s3://gezo-data/summary_male.mp3 --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
-          aws s3 cp cdn_data/summaries/summary_female.mp3 s3://gezo-data/summary_female.mp3 --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+
+          # 🔥 DÜZELTME: mp3 dosyaları sadece bu run'da gerçekten üretildiyse (has_changes=true) var olur.
+          # "Sadece cache güncelle" dalında üretilmedikleri için varlık kontrolü olmadan komut patlar.
+          if [ -f cdn_data/summaries/summary_male.mp3 ]; then
+            aws s3 cp cdn_data/summaries/summary_male.mp3 s3://gezo-data/summary_male.mp3 --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+          else
+            echo "ℹ️ summary_male.mp3 bu run'da üretilmedi, upload atlandı."
+          fi
+
+          if [ -f cdn_data/summaries/summary_female.mp3 ]; then
+            aws s3 cp cdn_data/summaries/summary_female.mp3 s3://gezo-data/summary_female.mp3 --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+          else
+            echo "ℹ️ summary_female.mp3 bu run'da üretilmedi, upload atlandı."
+          fi
 
       - name: Github'a Pushla
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
