@@ -302,8 +302,8 @@ def generate_tts_audio(summary_items, output_dir):
     synthesis_input = texttospeech.SynthesisInput(text=text_to_read)
 
     voice_profiles = {
-        "summary_male.mp3": "tr-TR-Chirp3-HD-Zephyr",
-        "summary_female.mp3": "tr-TR-Chirp3-HD-Fenrir"
+        "summary_male.mp3": "tr-TR-Chirp3-HD-Fenrir",  # Fenrir erkek modelidir
+        "summary_female.mp3": "tr-TR-Chirp3-HD-Zephyr" # Zephyr kadın modelidir
     }
 
     for filename, voice_name in voice_profiles.items():
