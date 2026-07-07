@@ -5,3 +5,4 @@ beautifulsoup4
 requests
 pydantic
 rapidfuzz
+google-cloud-texttospeech

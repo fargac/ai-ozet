@@ -24,10 +24,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 🔥 YENİ: Google Cloud Kimlik Bilgilerini Hazırla
+      - name: Google Cloud Kimlik Bilgilerini Olustur
+        run: echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > gcp_auth.json
+
       - name: Saatlik Ozeti Hazirla
         env:
-          PYTHONUNBUFFERED: "1"  # 🔥 YENİ: Logları saniye saniye ekrana bas!
+          PYTHONUNBUFFERED: "1" 
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: gcp_auth.json # Python kütüphanesi bu env değerini otomatik okur
         run: python scripts/hourly_summary.py
 
       - name: R2'ye Yukle
@@ -39,10 +44,14 @@ jobs:
         run: |
           aws s3 cp cdn_data/summaries/hourly_latest.json s3://gezo-data/hourly_summary.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
           aws s3 cp cdn_data/summaries/seen_links_cache.json s3://gezo-data/seen_links_cache.json --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+          
+          # 🔥 YENİ: Ses Dosyalarını Yükle (Mime tipleri AWS CLI tarafından otomatik MP3 olarak ayarlanır)
+          aws s3 cp cdn_data/summaries/summary_male.mp3 s3://gezo-data/summary_male.mp3 --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
+          aws s3 cp cdn_data/summaries/summary_female.mp3 s3://gezo-data/summary_female.mp3 --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --no-progress
 
       - name: Github'a Pushla
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "feat(cdn): Saatlik ozet ve link cache guncellendi"
+          commit_message: "feat(cdn): Ozet, cache ve ses dosyalari guncellendi"
           file_pattern: 'cdn_data/summaries/*.json'

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 from bs4 import BeautifulSoup
 from rapidfuzz import fuzz
+from google.cloud import texttospeech # 🔥 YENİ: Google TTS Kütüphanesi
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -38,7 +39,6 @@ class NewsItem(BaseModel):
 
 class SummaryResponse(BaseModel):
     has_changes: bool = Field(description="Sana verilen 'Bir Önceki Saatin Özeti' ile yeni gelen haberleri kıyasladığında, gündemi değiştirecek ÖNEMLİ YENİ BİR GELİŞME var mı?")
-    # Optional eklenerek "has_changes: false ise başka alan döndürme" kuralının çalışması sağlandı
     detailed_summary: Optional[List[NewsItem]] = Field(default=None, description="Haber maddelerinin listesi.")
     sources_used: Optional[str] = Field(default=None, description="Kullanılan kaynaklar. Örn: 'CNN Türk • Sözcü'")
 
@@ -76,7 +76,6 @@ def get_todays_news():
     return today_news_list
 
 def get_previous_summary():
-    """Önceki özeti Cloudflare yerine doğrudan Github Reposundaki lokal dosyadan okur."""
     local_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         'cdn_data', 'summaries', 'hourly_latest.json'
@@ -90,7 +89,6 @@ def get_previous_summary():
     return None
 
 def get_seen_links_cache():
-    """Hafızayı Cloudflare (HTTP 404) yerine doğrudan Github Reposundaki lokal dosyadan okur."""
     local_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         'cdn_data', 'summaries', 'seen_links_cache.json'
@@ -128,7 +126,6 @@ Aşağıda ise sistemde kayıtlı olan MEVCUT GÜNDEM bulunuyor (Bu veri, öncek
 {prev_context}
 
 GÖREVİN VE EDİTORYAL KURALLAR:
-
 0. BOŞ DELTA KONTROLÜ:
 Eğer Delta Havuzu boşsa doğrudan:
 {{"has_changes": false}}
@@ -150,11 +147,8 @@ JSON'u üretmeden önce editoryal kararını tamamla.
 
 3. HARMANLAMA VE HAFIZA (KRİTİK):
 "MEVCUT GÜNDEM" senin ana listendir.
-
 Listeyi sıfırdan oluşturma.
-
 Mevcut gündemdeki `title` alanları o olayların değişmez kimliğidir (ID).
-
 Bir olay mevcut listede bulunuyorsa:
 - `title` KESİNLİKLE değiştirilmeyecektir.
 - Yeni bilgi varsa yalnızca `desc` güncellenebilir.
@@ -163,7 +157,6 @@ Bir olay mevcut listede bulunuyorsa:
 
 4. KAYNAK BAŞLIKLARI (source_titles):
 `source_titles`, o olaya ait tüm geçerli RSS başlıklarının birleşimidir.
-
 Güncelleme sırasında:
 - yalnızca aynı olaya ait yeni ve gerçek RSS başlıklarını ekle,
 - mevcut ilgili başlıkları koru,
@@ -172,44 +165,33 @@ Güncelleme sırasında:
 
 5. ANLAMLI GELİŞME KRİTERİ:
 Aynı olay için yalnızca farklı kaynaklardan haberler geldiyse fakat kamuoyu açısından anlamlı yeni bir gelişme yoksa `has_changes=false` döndür.
-
 RSS akışındaki ufak kelime değişikliklerine, tekrar haberlere ve farklı kaynakların aynı olayı yeniden yayınlamasına kanma.
 
 6. OLAY BİRLEŞTİRME (DEDUPLICATION):
 Aynı olaya ait farklı RSS başlıklarını tek maddede birleştir.
-
 Bir olay için listede yalnızca BİR madde bulunmalıdır.
 
 7. LİSTE BOYUTU:
 Bu kural yalnızca `has_changes=true` olduğunda oluşturulan `detailed_summary` için geçerlidir.
-
 Nihai liste:
 - en az 4,
 - en fazla 6 maddeden oluşmalıdır.
 
 8. KIYASLAMA VE STABİLİTE:
 Yeni bir olay, mevcut listedeki en düşük öncelikli olaydan DAHA ÖNEMLİ DEĞİLSE listeye eklenmeyecektir.
-
 Yeni olay ile mevcut listedeki en düşük öncelikli olay benzer önem seviyesindeyse mevcut liste korunmalıdır.
-
 Kararsız kalınan tüm durumlarda mevcut gündemi koru.
-
 Nihai listeyi önem derecesine göre sırala.
-
 Ancak mevcut sıralamayı yalnızca önem dengesi gerçekten değişmişse değiştir.
-
 Benzer önemdeki olayların sırası korunmalıdır.
 
 9. KAYNAKLAR ÖZETİ (sources_used):
 `sources_used` alanına yalnızca nihai listedeki haberlerde kullanılan haber kuruluşlarının benzersiz adlarını yaz.
-
 Örnek:
 AA • Reuters • BBC • TRT Haber
-
 Aynı kaynak adını tekrar etme.
 
 10. DEĞİŞTİRME KARARI VE ÇIKTI OPTİMİZASYONU:
-
 `has_changes=true` yalnızca şu durumlarda döndürülmelidir:
 - Listeye gerçekten daha önemli yeni bir olay girdiyse.
 - Mevcut önemli bir olayda kamuoyu açısından anlamlı yeni bir gelişme oluştuysa.
@@ -217,33 +199,7 @@ Aynı kaynak adını tekrar etme.
 Bunun dışındaki tüm durumlarda:
 {{"has_changes": false}}
 JSON'unu döndür.
-
 Eğer `has_changes=false` ise başka hiçbir alan döndürme.
-
-GÖREVİ TAMAMLAMAK İÇİN AŞAĞIDAKİ JSON ŞABLONLARINDAN DURUMA UYGUN OLANI KULLAN.
-
-DURUM A:
-
-{{
-    "has_changes": false
-}}
-
-DURUM B:
-
-{{
-    "has_changes": true,
-    "detailed_summary": [
-        {{
-            "title": "Vurucu Kısa Başlık",
-            "desc": "Detaylı açıklama.",
-            "source_titles": [
-                "Ham RSS başlığı 1",
-                "Ham RSS başlığı 2"
-            ]
-        }}
-    ],
-    "sources_used": "AA • Reuters • BBC"
-}}
 """
 
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
@@ -284,7 +240,6 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
             prev_texts.append(f"{p_title} {p_title} {p_desc}")
 
     for item in summary_data.get("detailed_summary", []):
-        # Eğer optional olduğu için gelmediyse hata vermemesi için boş liste ataması
         if not item: continue
         
         raw_titles = item.get("source_titles", [])
@@ -301,7 +256,6 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
 
         item["source_links"] = list(set(source_links))
 
-        # KATMAN 1: LİNK KONTROLÜ
         is_new_layer1 = True
         if item["source_links"]:
             if any(l in prev_links for l in item["source_links"]):
@@ -311,14 +265,12 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
             item["is_new"] = False
             continue 
 
-        # KATMAN 2: METİN BENZERLİĞİ (FALLBACK)
         c_title = item.get("title", "").strip().lower()
         c_desc = item.get("desc", "").strip().lower()
         current_text = f"{c_title} {c_desc}"
 
         is_new_layer2 = True
         for p_text in prev_texts:
-            # difflib 0.0 ile 1.0 arası değer dönerken, rapidfuzz 0 ile 100 arası döner
             score = fuzz.token_set_ratio(current_text, p_text)
             if score > 75: 
                 is_new_layer2 = False
@@ -327,6 +279,55 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
         item["is_new"] = is_new_layer2
 
     return summary_data
+
+# 🔥 YENİ: MP3 Üretim Fonksiyonu
+def generate_tts_audio(summary_items, output_dir):
+    if not summary_items:
+        return
+
+    print("🎙️ Sesli özetler (MP3) oluşturuluyor...")
+    
+    text_to_read = "Gezo Gündem'den merhaba. İşte öne çıkan gelişmeler: "
+    for item in summary_items:
+        text_to_read += f"{item['title']}. {item['desc']} . "
+    text_to_read += "Şimdilik gelişmeler bu kadar, dinlediğiniz için teşekkürler."
+
+    try:
+        client = texttospeech.TextToSpeechClient()
+    except Exception as e:
+        print(f"⚠️ TTS İstemcisi başlatılamadı (GCP Kimlik bilgileri eksik olabilir): {e}")
+        return
+
+    synthesis_input = texttospeech.SynthesisInput(text=text_to_read)
+
+    voice_profiles = {
+        "summary_male.mp3": "tr-TR-Chirp3-HD-Zephyr",
+        "summary_female.mp3": "tr-TR-Chirp3-HD-Fenrir"
+    }
+
+    for filename, voice_name in voice_profiles.items():
+        try:
+            voice = texttospeech.VoiceSelectionParams(
+                language_code="tr-TR",
+                name=voice_name
+            )
+            
+            audio_config = texttospeech.AudioConfig(
+                audio_encoding=texttospeech.AudioEncoding.MP3,
+                speaking_rate=1.0 
+            )
+
+            response = client.synthesize_speech(
+                input=synthesis_input, voice=voice, audio_config=audio_config
+            )
+
+            file_path = os.path.join(output_dir, filename)
+            with open(file_path, "wb") as out:
+                out.write(response.audio_content)
+            print(f"✅ Ses dosyası kaydedildi: {file_path}")
+            
+        except Exception as e:
+            print(f"❌ {voice_name} için ses oluşturulurken hata: {e}")
 
 def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
     output_dir = os.path.join(
@@ -340,7 +341,6 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
     yesterday_tr = now_tr - timedelta(hours=24)
     doc_id = now_tr.strftime("%Y-%m-%d_%H-%M")
 
-    # 1. ÖZET JSON KAYDI
     cdn_payload = {
         "date": doc_id,
         "generated_at": now_tr.isoformat(timespec='seconds'),
@@ -358,7 +358,6 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
         json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
     print(f"📦 Özet dosyası güncellendi: {latest_path}")
 
-    # 2. LİNK HAFIZASI (CACHE) KAYDI
     updated_seen_links = list(set(previous_seen_links).union(set([n['link'] for n in all_raw_news])))
     updated_seen_links = updated_seen_links[-2000:]
     
@@ -367,7 +366,6 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
         json.dump({"seen_links": updated_seen_links}, f, ensure_ascii=False)
     print(f"🗄️ Link cache dosyası güncellendi (Toplam Link: {len(updated_seen_links)})")
     
-    # Github action'ı tetiklemek için flag
     with open(os.path.join(output_dir, ".upload_ready"), 'w') as f:
         f.write("ready")
 
@@ -380,7 +378,6 @@ if __name__ == "__main__":
 
     total_scanned = len(raw_news)
     
-    # ERKEN ÇIKIŞ (DELTA) FİLTRESİ
     seen_links = get_seen_links_cache()
     seen_links_set = set(seen_links)
     
@@ -412,6 +409,14 @@ if __name__ == "__main__":
                 break
 
             summary = resolve_is_new_hybrid(summary, raw_news, prev_summary)
+
+            # 🔥 YENİ: CDN'e kaydetmeden hemen önce MP3'leri oluşturuyoruz
+            output_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                'cdn_data', 'summaries'
+            )
+            os.makedirs(output_dir, exist_ok=True)
+            generate_tts_audio(summary.get("detailed_summary", []), output_dir)
 
             save_to_cdn(summary, total_scanned, raw_news, seen_links)
             print("✅ SAATLİK YAPAY ZEKA ÖZETİ BAŞARIYLA OLUŞTURULDU!")
