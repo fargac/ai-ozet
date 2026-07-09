@@ -393,6 +393,16 @@ def generate_tts_audio(summary_items, output_dir):
     text_to_read += "Şimdilik gelişmeler bu kadar, dinlediğiniz için teşekkürler."
     text_to_read = text_to_read.replace("'", "").replace("’", "").replace('"', '')
     text_to_read = re.sub(r'([A-Za-zÇÖĞÜŞİçöğüşı]+)-(\d+)', r'\1 \2', text_to_read)
+
+    # 🔥 YENİ: Tamamı büyük harfli, 4+ karakterli kelimeleri Title Case yap.
+    # Sebep: TTS motoru ALL-CAPS kelimeleri kısaltma sanıp harf harf okuyor
+    # (örn. "ROKETSAN" -> "R O K E T S A N"). Gerçek kısaltmalar (TBMM, AKP gibi
+    # kısa - genelde 2-4 harfli) etkilenmesin diye sadece 5+ harfli kelimelere uygula.
+    def fix_allcaps(match):
+        word = match.group(0)
+        return word.capitalize() if len(word) >= 5 else word
+
+    text_to_read = re.sub(r'\b[A-ZÇÖĞÜŞİ]{2,}\b', fix_allcaps, text_to_read)
     try:
         client = texttospeech.TextToSpeechClient()
     except Exception as e:
