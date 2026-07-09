@@ -2,21 +2,26 @@ import os
 import json
 import feedparser
 import time
-from datetime import datetime, timezone, timedelta  
+import tempfile
+import subprocess
+from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 from google import genai
-from pydantic import BaseModel, Field  
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from bs4 import BeautifulSoup
 from rapidfuzz import fuzz
 from google.cloud import texttospeech
 import re
-import subprocess
-import tempfile
+import imageio_ffmpeg
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 feedparser.USER_AGENT = USER_AGENT
+
+# 🔥 YENİ: Bir maddenin listede en fazla ne kadar süre kalabileceği (saat).
+# Bu süre içinde yeni bir kaynakla doğrulanmayan/güncellenmeyen maddeler otomatik düşürülür.
+STALE_ITEM_MAX_AGE_HOURS = 16
 
 SOURCES = [
     {"name": "CNN Türk",     "url": "https://www.cnnturk.com/feed/rss/all/news"},
@@ -44,6 +49,7 @@ class SummaryResponse(BaseModel):
     detailed_summary: Optional[List[NewsItem]] = Field(default=None, description="Haber maddelerinin listesi.")
     sources_used: Optional[str] = Field(default=None, description="Kullanılan kaynaklar. Örn: 'CNN Türk • Sözcü'")
 
+
 def get_todays_news():
     today_news_list = []
     tr_tz = timezone(timedelta(hours=3))
@@ -67,7 +73,7 @@ def get_todays_news():
                     link = entry.get('link', entry.get('id', '')).strip()
 
                     today_news_list.append({
-                        "source": source['name'], 
+                        "source": source['name'],
                         "title": entry.title,
                         "desc": clean_desc,
                         "link": link
@@ -76,6 +82,7 @@ def get_todays_news():
             print(f"❌ {source['name']} okunurken hata: {e}")
 
     return today_news_list
+
 
 def get_previous_summary():
     local_path = os.path.join(
@@ -90,6 +97,7 @@ def get_previous_summary():
             print(f"⚠️ Lokal önceki özet okunamadı: {e}")
     return None
 
+
 def get_seen_links_cache():
     local_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -103,16 +111,70 @@ def get_seen_links_cache():
             print(f"⚠️ Lokal link cache okunamadı: {e}")
     return []
 
+
+def expire_stale_items(previous_summary_data, max_age_hours=STALE_ITEM_MAX_AGE_HOURS):
+    """
+    🔥 YENİ: Bir maddenin 'first_seen' zamanından bu yana max_age_hours'tan
+    fazla geçtiyse (yani yeni hiçbir kaynakla doğrulanmadıysa) listeden düşürür.
+    Bu, LLM'in "artık gündemde değil" kararını vermesine güvenmek yerine,
+    zamanı deterministik olarak kodda kontrol eder (LLM'in zaman kavramı yoktur).
+    """
+    if not previous_summary_data or "items" not in previous_summary_data:
+        return previous_summary_data
+
+    now = datetime.now(timezone(timedelta(hours=3)))
+    fresh_items = []
+    expired_count = 0
+
+    for item in previous_summary_data["items"]:
+        first_seen = item.get("first_seen")
+        if first_seen:
+            try:
+                seen_at = date_parser.parse(first_seen)
+                age = now - seen_at
+                if age > timedelta(hours=max_age_hours):
+                    expired_count += 1
+                    continue
+            except Exception:
+                pass  # parse edilemiyorsa maddeyi güvenli tarafta tutup geçiyoruz
+        fresh_items.append(item)
+
+    if expired_count:
+        print(f"🗑️ {expired_count} bayat madde ({max_age_hours} saatten eski, güncellenmemiş) gündemden düşürüldü.")
+
+    previous_summary_data["items"] = fresh_items
+    return previous_summary_data
+
+
+def track_first_seen(summary_items, previous_summary_data, now_iso):
+    """
+    🔥 YENİ: Her maddeye ilk görüldüğü zamanı (first_seen) atar.
+    Madde önceki gündemde zaten varsa (title eşleşirse) orijinal first_seen korunur,
+    tamamen yeni bir maddeyse şimdiki zaman atanır.
+    """
+    prev_first_seen = {}
+    if previous_summary_data and "items" in previous_summary_data:
+        for item in previous_summary_data["items"]:
+            if item.get("title") and item.get("first_seen"):
+                prev_first_seen[item["title"]] = item["first_seen"]
+
+    for item in summary_items:
+        title = item.get("title")
+        item["first_seen"] = prev_first_seen.get(title, now_iso)
+
+    return summary_items
+
+
 def generate_ai_summary(new_news_data, previous_summary_data=None, use_fallback=False):
     main_model = 'gemini-3.5-flash'
     fallback_model = 'gemini-2.5-flash'
 
     model_name = fallback_model if use_fallback else main_model
-    
+
     print(f"🤖 Yapay zeka modeli '{model_name}' ile {len(new_news_data)} yeni haber değerlendiriliyor...")
-    
+
     news_text = "\n".join([f"- [{n['source']}] {n['title']} (Detay: {n['desc']})" for n in new_news_data])
-    
+
     prev_context = ""
     if previous_summary_data and "items" in previous_summary_data:
         prev_text = json.dumps(previous_summary_data["items"], ensure_ascii=False, indent=2)
@@ -150,12 +212,15 @@ JSON'u üretmeden önce editoryal kararını tamamla.
 3. HARMANLAMA VE HAFIZA (KRİTİK):
 "MEVCUT GÜNDEM" senin ana listendir.
 Listeyi sıfırdan oluşturma.
-Mevcut gündemdeki `title` alanları o olayların değişmez kimliğidir (ID).
-Bir olay mevcut listede bulunuyorsa:
-- `title` KESİNLİKLE değiştirilmeyecektir.
+Mevcut gündemdeki `title` alanları o olayların değişmez kimliğidir (ID), sadece stilistik/kozmetik sebeplerle değiştirilmez.
+FAKAT olayın DURUMU değiştiyse (örn: "devam ediyor" iken sona erdiyse, "başlayacak" iken başladıysa,
+iptal edildiyse, sonuçlandıysa) title bu yeni durumu yansıtacak şekilde GÜNCELLENMELİDİR.
+Örnek: "NATO Zirvesi Ankara'da Devam Ediyor" → zirve bittiyse → "NATO Zirvesi Ankara'da Sona Erdi"
+Böyle bir durum güncellemesi yapıldığında `desc` de yeni sonucu yansıtacak şekilde güncellenir.
+Bunun dışındaki durumlarda:
 - Yeni bilgi varsa yalnızca `desc` güncellenebilir.
 - Yeni bilgi yoksa `desc` değiştirilmemelidir.
-- Başlıkları yeniden yazma.
+- Başlıkları gereksiz yere yeniden yazma.
 
 4. KAYNAK BAŞLIKLARI (source_titles):
 `source_titles`, o olaya ait tüm geçerli RSS başlıklarının birleşimidir.
@@ -163,7 +228,7 @@ Güncelleme sırasında:
 - yalnızca aynı olaya ait yeni ve gerçek RSS başlıklarını ekle,
 - mevcut ilgili başlıkları koru,
 - aynı başlığı ikinci kez ekleme,
-- farklı olaylara ait başlıkları aynı dizide birleştirme,
+- farklı olaylara ait başlıkları aynı dizide birleştirme.
 
 5. ANLAMLI GELİŞME KRİTERİ:
 Aynı olay için yalnızca farklı kaynaklardan haberler geldiyse fakat kamuoyu açısından anlamlı yeni bir gelişme yoksa `has_changes=false` döndür.
@@ -197,6 +262,7 @@ Aynı kaynak adını tekrar etme.
 `has_changes=true` yalnızca şu durumlarda döndürülmelidir:
 - Listeye gerçekten daha önemli yeni bir olay girdiyse.
 - Mevcut önemli bir olayda kamuoyu açısından anlamlı yeni bir gelişme oluştuysa.
+- Mevcut listedeki bir olayın DURUMU değiştiyse (madde 3'teki gibi).
 
 Bunun dışındaki tüm durumlarda:
 {{"has_changes": false}}
@@ -211,7 +277,7 @@ Eğer `has_changes=false` ise başka hiçbir alan döndürme.
             contents=prompt,
             config=genai.types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=SummaryResponse 
+                response_schema=SummaryResponse
             )
         )
         return json.loads(response.text)
@@ -222,6 +288,7 @@ Eğer `has_changes=false` ise başka hiçbir alan döndürme.
             return generate_ai_summary(new_news_data, previous_summary_data, use_fallback=True)
         raise e
 
+
 def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
     title_to_link = {}
     for n in raw_news:
@@ -231,26 +298,24 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
 
     prev_links = set()
     prev_texts = []
-    
+
     if previous_summary_data and "items" in previous_summary_data:
         for item in previous_summary_data["items"]:
             for l in item.get("source_links", []):
                 if l: prev_links.add(l)
-            
+
             p_title = item.get("title", "").strip().lower()
             p_desc = item.get("desc", "").strip().lower()
-            
-            # 🔥 DÜZELTME: p_title'ı iki kez eklemek rapidfuzz'da anlamsızdı (token_set_ratio tekrarı eler). Sadeleştirildi.
             prev_texts.append(f"{p_title} {p_desc}")
 
     for item in summary_data.get("detailed_summary", []):
         if not item: continue
-        
+
         raw_titles = item.get("source_titles", [])
         item["source_titles"] = list(dict.fromkeys(raw_titles))[-10:]
         source_titles = item.get("source_titles", [])
         source_links = []
-        
+
         for t in source_titles:
             clean_t = t.strip().lower()
             best_link, best_score = None, 0
@@ -266,11 +331,11 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
         is_new_layer1 = True
         if item["source_links"]:
             if any(l in prev_links for l in item["source_links"]):
-                is_new_layer1 = False 
+                is_new_layer1 = False
 
         if not is_new_layer1:
             item["is_new"] = False
-            continue 
+            continue
 
         c_title = item.get("title", "").strip().lower()
         c_desc = item.get("desc", "").strip().lower()
@@ -279,33 +344,48 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
         is_new_layer2 = True
         for p_text in prev_texts:
             score = fuzz.token_set_ratio(current_text, p_text)
-            if score > 75: 
+            if score > 75:
                 is_new_layer2 = False
-                break 
+                break
 
         item["is_new"] = is_new_layer2
 
     return summary_data
 
+
 def reencode_cbr(audio_bytes: bytes) -> bytes:
+    """
+    Google Cloud TTS'ten gelen MP3'ü sabit bitrate (CBR) olarak yeniden encode eder.
+    Sebep: ExoPlayer/Media3, Xing/VBRI header'ı belirsiz olan MP3'lerde
+    yanlış frame/zaman haritası çıkarabiliyor (ExoPlayer bilinen bug kategorisi),
+    bu da uygulama içinde çalarken hızlanma/kayma olarak algılanıyor.
+    Dış player'lar bu belirsizliği tolere ediyor, ExoPlayer etmiyor.
+    """
+    ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+
     with tempfile.NamedTemporaryFile(suffix=".mp3") as tmp_in, \
          tempfile.NamedTemporaryFile(suffix=".mp3") as tmp_out:
         tmp_in.write(audio_bytes)
         tmp_in.flush()
+
         subprocess.run([
-            "ffmpeg", "-y", "-i", tmp_in.name,
-            "-c:a", "libmp3lame", "-b:a", "128k", "-ar", "44100",
+            ffmpeg_path, "-y", "-i", tmp_in.name,
+            "-c:a", "libmp3lame",
+            "-b:a", "128k",
+            "-ar", "44100",
             tmp_out.name
         ], check=True, capture_output=True)
+
         tmp_out.seek(0)
         return tmp_out.read()
+
 
 def generate_tts_audio(summary_items, output_dir):
     if not summary_items:
         return
 
     print("🎙️ Sesli özetler (MP3) oluşturuluyor...")
-    
+
     text_to_read = "Gezo Gündem'den merhaba. İşte öne çıkan gelişmeler: "
     for item in summary_items:
         text_to_read += f"{item['title']}. {item['desc']} . "
@@ -321,8 +401,8 @@ def generate_tts_audio(summary_items, output_dir):
     synthesis_input = texttospeech.SynthesisInput(text=text_to_read)
 
     voice_profiles = {
-        "summary_male.mp3": "tr-TR-Chirp3-HD-Fenrir", 
-        "summary_female.mp3": "tr-TR-Chirp3-HD-Zephyr" 
+        "summary_male.mp3": "tr-TR-Chirp3-HD-Fenrir",
+        "summary_female.mp3": "tr-TR-Chirp3-HD-Zephyr"
     }
 
     for filename, voice_name in voice_profiles.items():
@@ -331,10 +411,10 @@ def generate_tts_audio(summary_items, output_dir):
                 language_code="tr-TR",
                 name=voice_name
             )
-            
+
             audio_config = texttospeech.AudioConfig(
                 audio_encoding=texttospeech.AudioEncoding.MP3,
-                speaking_rate=1.0 
+                speaking_rate=1.0
             )
 
             response = client.synthesize_speech(
@@ -345,9 +425,10 @@ def generate_tts_audio(summary_items, output_dir):
             with open(file_path, "wb") as out:
                 out.write(reencode_cbr(response.audio_content))
             print(f"✅ Ses dosyası kaydedildi: {file_path}")
-            
+
         except Exception as e:
             print(f"❌ {voice_name} için ses oluşturulurken hata: {e}")
+
 
 def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
     output_dir = os.path.join(
@@ -355,7 +436,7 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
         'cdn_data', 'summaries'
     )
     os.makedirs(output_dir, exist_ok=True)
-    
+
     tr_tz = timezone(timedelta(hours=3))
     now_tr = datetime.now(tr_tz)
     yesterday_tr = now_tr - timedelta(hours=24)
@@ -378,18 +459,17 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
         json.dump(cdn_payload, f, ensure_ascii=False, separators=(',', ':'))
     print(f"📦 Özet dosyası güncellendi: {latest_path}")
 
-    # 🔥 DÜZELTME: Set kullanımı sonucu kronolojik sıralama kaybı (Bug) düzeltildi.
-    # Önce listeler kronolojik olarak uç uca ekleniyor, sonra dict.fromkeys ile SIRA KORUNARAK tekilleştiriliyor.
     combined_links = previous_seen_links + [n['link'] for n in all_raw_news]
     updated_seen_links = list(dict.fromkeys(combined_links))[-2000:]
-    
+
     cache_path = os.path.join(output_dir, "seen_links_cache.json")
     with open(cache_path, 'w', encoding='utf-8') as f:
         json.dump({"seen_links": updated_seen_links}, f, ensure_ascii=False)
     print(f"🗄️ Link cache dosyası güncellendi (Toplam Link: {len(updated_seen_links)})")
-    
+
     with open(os.path.join(output_dir, ".upload_ready"), 'w') as f:
         f.write("ready")
+
 
 if __name__ == "__main__":
     raw_news = get_todays_news()
@@ -399,12 +479,12 @@ if __name__ == "__main__":
         exit(0)
 
     total_scanned = len(raw_news)
-    
+
     seen_links = get_seen_links_cache()
     seen_links_set = set(seen_links)
-    
+
     new_unseen_news = [n for n in raw_news if n['link'] not in seen_links_set]
-    
+
     print(f"📊 Toplam Havuz: {total_scanned} | Daha Önce Görülen: {len(seen_links)} | Yepyeni (Delta): {len(new_unseen_news)}")
 
     if len(new_unseen_news) == 0:
@@ -412,21 +492,24 @@ if __name__ == "__main__":
         exit(0)
 
     prev_summary = get_previous_summary()
+    # 🔥 YENİ: Bayat maddeleri (uzun süredir güncellenmeyenleri) modele göstermeden önce düşür.
+    prev_summary = expire_stale_items(prev_summary)
+
     last_error = None
+    tr_tz = timezone(timedelta(hours=3))
 
     for deneme in range(4):
         try:
             print(f"🔄 Deneme {deneme + 1}/4...")
             summary = generate_ai_summary(new_unseen_news, prev_summary)
-            
+
             if summary.get("has_changes") is False:
                 print("🛑 Yeni haberler var ama gündemi değiştirecek kadar önemli değil. Sadece cache güncelleniyor.")
-                
-                # 🔥 DÜZELTME: Eski özette asılı kalan "YENİ" ibarelerini (is_new bayrağını) temizleme
+
                 fallback_items = prev_summary.get("items", []) if prev_summary else []
                 for item in fallback_items:
-                    item["is_new"] = False # Gündem değişmediyse artık yeni değiller
-                
+                    item["is_new"] = False
+
                 fallback_summary_data = {
                     "detailed_summary": fallback_items,
                     "sources_used": prev_summary.get("sources", "") if prev_summary else ""
@@ -436,6 +519,12 @@ if __name__ == "__main__":
                 break
 
             summary = resolve_is_new_hybrid(summary, raw_news, prev_summary)
+
+            # 🔥 YENİ: her maddeye first_seen ata (yeni maddeler için şimdi, mevcutlar için korunan değer)
+            now_iso = datetime.now(tr_tz).isoformat(timespec='seconds')
+            summary["detailed_summary"] = track_first_seen(
+                summary.get("detailed_summary", []), prev_summary, now_iso
+            )
 
             output_dir = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
