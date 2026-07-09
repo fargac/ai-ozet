@@ -66,6 +66,12 @@ jobs:
             echo "ℹ️ summary_female.mp3 bu run'da üretilmedi, upload atlandı."
           fi
 
+      - name: Guncel Main'i Cek
+        if: hashFiles('cdn_data/summaries/.upload_ready') != ''
+        run: |
+          git fetch origin main
+          git rebase origin/main --autostash
+
       - name: Github'a Pushla
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
         uses: stefanzweifel/git-auto-commit-action@v5
