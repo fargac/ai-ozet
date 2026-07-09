@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 from rapidfuzz import fuzz
 from google.cloud import texttospeech
 import re
+import subprocess
+import tempfile
 
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -285,6 +287,19 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
 
     return summary_data
 
+def reencode_cbr(audio_bytes: bytes) -> bytes:
+    with tempfile.NamedTemporaryFile(suffix=".mp3") as tmp_in, \
+         tempfile.NamedTemporaryFile(suffix=".mp3") as tmp_out:
+        tmp_in.write(audio_bytes)
+        tmp_in.flush()
+        subprocess.run([
+            "ffmpeg", "-y", "-i", tmp_in.name,
+            "-c:a", "libmp3lame", "-b:a", "128k", "-ar", "44100",
+            tmp_out.name
+        ], check=True, capture_output=True)
+        tmp_out.seek(0)
+        return tmp_out.read()
+
 def generate_tts_audio(summary_items, output_dir):
     if not summary_items:
         return
@@ -328,7 +343,7 @@ def generate_tts_audio(summary_items, output_dir):
 
             file_path = os.path.join(output_dir, filename)
             with open(file_path, "wb") as out:
-                out.write(response.audio_content)
+                out.write(reencode_cbr(response.audio_content))
             print(f"✅ Ses dosyası kaydedildi: {file_path}")
             
         except Exception as e:
