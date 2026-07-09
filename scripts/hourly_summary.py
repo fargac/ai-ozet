@@ -371,8 +371,9 @@ def reencode_cbr(audio_bytes: bytes) -> bytes:
         subprocess.run([
             ffmpeg_path, "-y", "-i", tmp_in.name,
             "-c:a", "libmp3lame",
-            "-b:a", "128k",
-            "-ar", "44100",
+            "-b:a", "48k",
+            "-ac", "1",    
+            "-ar", "24000",
             tmp_out.name
         ], check=True, capture_output=True)
 
@@ -386,9 +387,9 @@ def generate_tts_audio(summary_items, output_dir):
 
     print("🎙️ Sesli özetler (MP3) oluşturuluyor...")
 
-    text_to_read = "Gezo Gündem'den merhaba. İşte öne çıkan gelişmeler: "
+    text_to_read = "Gezo Gündem'den merhaba. [pause] İşte öne çıkan gelişmeler: [pause] "
     for item in summary_items:
-        text_to_read += f"{item['title']}. {item['desc']} . "
+        text_to_read += f"{item['title']}. {item['desc']} . [pause] "
     text_to_read += "Şimdilik gelişmeler bu kadar, dinlediğiniz için teşekkürler."
     text_to_read = text_to_read.replace("'", "").replace("’", "").replace('"', '')
     text_to_read = re.sub(r'([A-Za-zÇÖĞÜŞİçöğüşı]+)-(\d+)', r'\1 \2', text_to_read)
@@ -398,11 +399,11 @@ def generate_tts_audio(summary_items, output_dir):
         print(f"⚠️ TTS İstemcisi başlatılamadı (GCP Kimlik bilgileri eksik olabilir): {e}")
         return
 
-    synthesis_input = texttospeech.SynthesisInput(text=text_to_read)
+    synthesis_input = texttospeech.SynthesisInput(markup=text_to_read)
 
     voice_profiles = {
-        "summary_male.mp3": "tr-TR-Chirp3-HD-Fenrir",
-        "summary_female.mp3": "tr-TR-Chirp3-HD-Zephyr"
+        "summary_male.mp3": "tr-TR-Chirp3-HD-Charon",
+        "summary_female.mp3": "tr-TR-Chirp3-HD-Kore"
     }
 
     for filename, voice_name in voice_profiles.items():
