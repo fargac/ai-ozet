@@ -387,10 +387,10 @@ def generate_tts_audio(summary_items, output_dir):
 
     print("🎙️ Sesli özetler (MP3) oluşturuluyor...")
 
-    text_to_read = "Gezo Gündem'den merhaba. [pause] İşte öne çıkan gelişmeler: [pause] "
+    text_to_read = ""
     for item in summary_items:
         text_to_read += f"{item['title']}. {item['desc']} . [pause] "
-    text_to_read += "Şimdilik gelişmeler bu kadar, dinlediğiniz için teşekkürler."
+    text_to_read += "Şimdilik gelişmeler bu kadar,gezo gündemi dinlediğiniz için teşekkürler."
     text_to_read = text_to_read.replace("'", "").replace("’", "").replace('"', '')
     text_to_read = re.sub(r'([A-Za-zÇÖĞÜŞİçöğüşı]+)-(\d+)', r'\1 \2', text_to_read)
 
