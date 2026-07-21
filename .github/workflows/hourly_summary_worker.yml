@@ -80,3 +80,18 @@ jobs:
         with:
           commit_message: "feat(cdn): Ozet, cache ve ses dosyalari guncellendi"
           file_pattern: 'cdn_data/summaries/*.json cdn_data/summaries/*.mp3'
+
+          - name: Cloudflare Cache Temizle (Purge)
+        if: hashFiles('cdn_data/summaries/.upload_ready') != ''
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/purge_cache" \
+               -H "Authorization: Bearer ${{ secrets.CF_PURGE_TOKEN }}" \
+               -H "Content-Type: application/json" \
+               --data '{
+                 "files": [
+                   "https://api.gezoist.com/summary_male.mp3",
+                   "https://api.gezoist.com/summary_female.mp3",
+                   "https://api.gezoist.com/hourly_latest.json",
+                   "https://api.gezoist.com/latest.json"
+                 ]
+               }'
