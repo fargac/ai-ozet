@@ -81,7 +81,7 @@ jobs:
           commit_message: "feat(cdn): Ozet, cache ve ses dosyalari guncellendi"
           file_pattern: 'cdn_data/summaries/*.json cdn_data/summaries/*.mp3'
 
-          - name: Cloudflare Cache Temizle (Purge)
+      - name: Cloudflare Cache Temizle (Purge)
         if: hashFiles('cdn_data/summaries/.upload_ready') != ''
         run: |
           curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/purge_cache" \
