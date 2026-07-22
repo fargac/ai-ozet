@@ -95,3 +95,14 @@ jobs:
                    "https://api.gezoist.com/latest.json"
                  ]
                }'
+
+      # 🔥 YENİ: Zone-level purge, Worker'ın kendi caches.default (Cache API) belleğini
+      # TEMİZLEMİYOR (Cloudflare'in bilinen bir kısıtı). O yüzden Worker'daki
+      # /purge-audio-xk9p2m endpoint'ini çağırıp cache.delete() ile gerçek temizliği yapıyoruz.
+      - name: Worker Cache Temizle (caches.default)
+        if: hashFiles('cdn_data/summaries/.upload_ready') != ''
+        env:
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+        run: |
+          curl -s -X POST "https://api.gezoist.com/purge-audio-xk9p2m" \
+               -H "x-admin-key: $ADMIN_KEY"
