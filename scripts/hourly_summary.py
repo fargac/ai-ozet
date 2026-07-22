@@ -32,7 +32,6 @@ SOURCES = [
     {"name": "Habertürk",    "url": "https://www.haberturk.com/rss/manset.xml"},
     {"name": "En Son Haber", "url": "https://www.ensonhaber.com/rss/gundem.xml"},
     {"name": "Mynet",        "url": "https://www.mynet.com/haber/rss/sondakika"},
-    {"name": "Son Dakika",   "url": "https://rss.sondakika.com/rss_standart.asp"},
     {"name": "NTV Spor",     "url": "https://www.ntvspor.net/rss/anasayfa"},
     {"name": "Fotomaç",      "url": "https://www.fotomac.com.tr/rss/son24saat.xml"},
     {"name": "Ekonomim",     "url": "https://www.ekonomim.com/rss"}
