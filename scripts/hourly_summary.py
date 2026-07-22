@@ -4,6 +4,7 @@ import feedparser
 import time
 import tempfile
 import subprocess
+import socket
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 from google import genai
@@ -15,12 +16,15 @@ from google.cloud import texttospeech
 import re
 import imageio_ffmpeg
 
+# 🔥 YENİ (BEST PRACTICE): Global zaman aşımı (timeout) ayarı. 
+# Herhangi bir haber sitesi veya ağ isteği 15 saniyede cevap vermezse bağlantıyı zorla koparır.
+socket.setdefaulttimeout(15)
+
 # 🛡️ ANTI-BAN (ENGEL ÖNLEYİCİ) KİMLİK
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 feedparser.USER_AGENT = USER_AGENT
 
-# 🔥 YENİ: Bir maddenin listede en fazla ne kadar süre kalabileceği (saat).
-# Bu süre içinde yeni bir kaynakla doğrulanmayan/güncellenmeyen maddeler otomatik düşürülür.
+# Bir maddenin listede en fazla ne kadar süre kalabileceği (saat).
 STALE_ITEM_MAX_AGE_HOURS = 16
 
 SOURCES = [
@@ -78,7 +82,8 @@ def get_todays_news():
                         "link": link
                     })
         except Exception as e:
-            print(f"❌ {source['name']} okunurken hata: {e}")
+            # Zaman aşımı veya sunucu hatası olursa buraya düşer, işlemi durdurmaz
+            print(f"❌ {source['name']} okunurken hata (Atlandı): {e}")
 
     return today_news_list
 
@@ -112,12 +117,6 @@ def get_seen_links_cache():
 
 
 def expire_stale_items(previous_summary_data, max_age_hours=STALE_ITEM_MAX_AGE_HOURS):
-    """
-    🔥 YENİ: Bir maddenin 'first_seen' zamanından bu yana max_age_hours'tan
-    fazla geçtiyse (yani yeni hiçbir kaynakla doğrulanmadıysa) listeden düşürür.
-    Bu, LLM'in "artık gündemde değil" kararını vermesine güvenmek yerine,
-    zamanı deterministik olarak kodda kontrol eder (LLM'in zaman kavramı yoktur).
-    """
     if not previous_summary_data or "items" not in previous_summary_data:
         return previous_summary_data
 
@@ -135,7 +134,7 @@ def expire_stale_items(previous_summary_data, max_age_hours=STALE_ITEM_MAX_AGE_H
                     expired_count += 1
                     continue
             except Exception:
-                pass  # parse edilemiyorsa maddeyi güvenli tarafta tutup geçiyoruz
+                pass 
         fresh_items.append(item)
 
     if expired_count:
@@ -146,11 +145,6 @@ def expire_stale_items(previous_summary_data, max_age_hours=STALE_ITEM_MAX_AGE_H
 
 
 def track_first_seen(summary_items, previous_summary_data, now_iso):
-    """
-    🔥 YENİ: Her maddeye ilk görüldüğü zamanı (first_seen) atar.
-    Madde önceki gündemde zaten varsa (title eşleşirse) orijinal first_seen korunur,
-    tamamen yeni bir maddeyse şimdiki zaman atanır.
-    """
     prev_first_seen = {}
     if previous_summary_data and "items" in previous_summary_data:
         for item in previous_summary_data["items"]:
@@ -353,13 +347,6 @@ def resolve_is_new_hybrid(summary_data, raw_news, previous_summary_data):
 
 
 def reencode_cbr(audio_bytes: bytes) -> bytes:
-    """
-    Google Cloud TTS'ten gelen MP3'ü sabit bitrate (CBR) olarak yeniden encode eder.
-    Sebep: ExoPlayer/Media3, Xing/VBRI header'ı belirsiz olan MP3'lerde
-    yanlış frame/zaman haritası çıkarabiliyor (ExoPlayer bilinen bug kategorisi),
-    bu da uygulama içinde çalarken hızlanma/kayma olarak algılanıyor.
-    Dış player'lar bu belirsizliği tolere ediyor, ExoPlayer etmiyor.
-    """
     ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
     with tempfile.NamedTemporaryFile(suffix=".mp3") as tmp_in, \
@@ -367,6 +354,7 @@ def reencode_cbr(audio_bytes: bytes) -> bytes:
         tmp_in.write(audio_bytes)
         tmp_in.flush()
 
+        # 🔥 YENİ (BEST PRACTICE): FFmpeg kilitlenmesini engellemek için timeout eklendi
         subprocess.run([
             ffmpeg_path, "-y", "-i", tmp_in.name,
             "-c:a", "libmp3lame",
@@ -374,7 +362,7 @@ def reencode_cbr(audio_bytes: bytes) -> bytes:
             "-ac", "1",    
             "-ar", "24000",
             tmp_out.name
-        ], check=True, capture_output=True)
+        ], check=True, capture_output=True, timeout=30) 
 
         tmp_out.seek(0)
         return tmp_out.read()
@@ -393,10 +381,6 @@ def generate_tts_audio(summary_items, output_dir):
     text_to_read = text_to_read.replace("'", "").replace("’", "").replace('"', '')
     text_to_read = re.sub(r'([A-Za-zÇÖĞÜŞİçöğüşı]+)-(\d+)', r'\1 \2', text_to_read)
 
-    # 🔥 YENİ: Tamamı büyük harfli, 4+ karakterli kelimeleri Title Case yap.
-    # Sebep: TTS motoru ALL-CAPS kelimeleri kısaltma sanıp harf harf okuyor
-    # (örn. "ROKETSAN" -> "R O K E T S A N"). Gerçek kısaltmalar (TBMM, AKP gibi
-    # kısa - genelde 2-4 harfli) etkilenmesin diye sadece 5+ harfli kelimelere uygula.
     def fix_allcaps(match):
         word = match.group(0)
         return word.capitalize() if len(word) >= 5 else word
@@ -502,7 +486,6 @@ if __name__ == "__main__":
         exit(0)
 
     prev_summary = get_previous_summary()
-    # 🔥 YENİ: Bayat maddeleri (uzun süredir güncellenmeyenleri) modele göstermeden önce düşür.
     prev_summary = expire_stale_items(prev_summary)
 
     last_error = None
@@ -530,7 +513,6 @@ if __name__ == "__main__":
 
             summary = resolve_is_new_hybrid(summary, raw_news, prev_summary)
 
-            # 🔥 YENİ: her maddeye first_seen ata (yeni maddeler için şimdi, mevcutlar için korunan değer)
             now_iso = datetime.now(tr_tz).isoformat(timespec='seconds')
             summary["detailed_summary"] = track_first_seen(
                 summary.get("detailed_summary", []), prev_summary, now_iso
