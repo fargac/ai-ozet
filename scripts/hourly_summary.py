@@ -34,7 +34,7 @@ SOURCES = [
     {"name": "Sabah",        "url": "https://www.sabah.com.tr/rss/gundem.xml"},
     {"name": "Milliyet",     "url": "https://www.milliyet.com.tr/rss/rssnew/sondakikarss.xml"},
     {"name": "Habertürk",    "url": "https://www.haberturk.com/rss/manset.xml"},
-    {"name": "En Son Haber", "url": "https://www.ensonhaber.com/rss/gundem.xml"},
+    {"name": "En Son Haber", "url": "https://www.ensonhaber.com/rss/ensonhaber.xml"},
     {"name": "Mynet",        "url": "https://www.mynet.com/haber/rss/sondakika"},
     {"name": "NTV Spor",     "url": "https://www.ntvspor.net/rss/anasayfa"},
     {"name": "Fotomaç",      "url": "https://www.fotomac.com.tr/rss/son24saat.xml"},
