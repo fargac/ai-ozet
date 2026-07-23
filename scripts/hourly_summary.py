@@ -392,11 +392,11 @@ def generate_tts_audio(summary_items, output_dir):
         print(f"⚠️ TTS İstemcisi başlatılamadı (GCP Kimlik bilgileri eksik olabilir): {e}")
         return
 
-    synthesis_input = texttospeech.SynthesisInput(markup=text_to_read)
+    synthesis_input = texttospeech.SynthesisInput(text=text_to_read)
 
     voice_profiles = {
-        "summary_male.mp3": "tr-TR-Chirp3-HD-Charon",
-        "summary_female.mp3": "tr-TR-Chirp3-HD-Kore"
+        "summary_male.mp3": "tr-TR-Wavenet-B", 
+        "summary_female.mp3": "tr-TR-Wavenet-A"
     }
 
     for filename, voice_name in voice_profiles.items():
