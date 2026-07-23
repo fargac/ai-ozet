@@ -423,6 +423,30 @@ def generate_tts_audio(summary_items, output_dir):
         except Exception as e:
             print(f"❌ {voice_name} için ses oluşturulurken hata: {e}")
 
+# 🔥 YENİ: Sabit yayın saatleri — gerçek çalışma zamanından bağımsız
+SLOT_HOURS_TR = [9, 14, 21]
+TRIGGER_GRACE_MINUTES = 10  # Cron 55. dakikada tetiklendiği için ileri kaydırma payı
+
+def get_edition_slot(now_tr: datetime) -> str:
+    """
+    Bu çalıştırmanın hangi sabit yayın saatine (09:00/14:00/21:00) ait olduğunu bulur.
+    Cron X:55'te tetiklendiği ve manuel retry'lar geç kalabildiği için,
+    'şu ana kadar geçmiş en yakın slot' mantığı kullanılır (küçük bir grace payı ile).
+    Böylece 14:00 slotu patlayıp 15:15'te manuel tetiklense bile etiket hep "14:00" kalır.
+    """
+    adjusted = now_tr + timedelta(minutes=TRIGGER_GRACE_MINUTES)
+    candidates = []
+    for day_offset in (0, -1):
+        base_date = adjusted.date() + timedelta(days=day_offset)
+        for h in SLOT_HOURS_TR:
+            slot_dt = datetime(
+                base_date.year, base_date.month, base_date.day, h, 0, 0,
+                tzinfo=adjusted.tzinfo
+            )
+            if slot_dt <= adjusted:
+                candidates.append(slot_dt)
+    chosen = max(candidates)
+    return chosen.strftime("%H:%M")
 
 def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
     output_dir = os.path.join(
@@ -439,6 +463,7 @@ def save_to_cdn(summary_data, scanned_count, all_raw_news, previous_seen_links):
     cdn_payload = {
         "date": doc_id,
         "generated_at": now_tr.isoformat(timespec='seconds'),
+        "edition_slot": get_edition_slot(now_tr),
         "range": {
             "start": yesterday_tr.isoformat(timespec='seconds'),
             "end": now_tr.isoformat(timespec='seconds')
