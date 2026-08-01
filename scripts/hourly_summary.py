@@ -394,9 +394,12 @@ def generate_tts_audio(summary_items, output_dir):
 
     synthesis_input = texttospeech.SynthesisInput(text=text_to_read)
 
+    # 🔥 GÜNCELLENDİ: Google Cloud'un en iyi TTS ailesi olan Chirp 3 HD'ye geçildi.
+    # Charon: derin/otoriter (erkek) — Kore: nötr/bilgilendirici (kadın), ikisi de haber
+    # okuma tonuna uygun olacak şekilde Google tarafından tasarlanmış sesler.
     voice_profiles = {
-        "summary_male.mp3": "tr-TR-Wavenet-B", 
-        "summary_female.mp3": "tr-TR-Wavenet-A"
+        "summary_male.mp3": "tr-TR-Chirp3-HD-Charon",
+        "summary_female.mp3": "tr-TR-Chirp3-HD-Kore"
     }
 
     for filename, voice_name in voice_profiles.items():
