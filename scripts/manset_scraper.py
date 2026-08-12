@@ -75,19 +75,21 @@ def get_session() -> requests.Session:
     session.mount("https://", adapter)
     return session
 
-# --- 4. GÖRSEL DOĞRULAMA ---
-def check_image_url(session: requests.Session, url: str, min_size_bytes: int = 10_000) -> bool:
+# --- 4. GÖRSEL VARLIK KONTROLÜ ---
+# NOT: Önceki sürümde burada dosya boyutuna (min_size_bytes) dayalı bir
+# "gerçek mi placeholder mı" ayrımı vardı. Bu heuristik güvenilmezdi:
+# gerçek small_ dosyaları (~12KB) eşiğe (10KB) çok yakın olduğundan bazı
+# geçerli thumbUrl'ler yanlışlıkla geçersiz sayılıp yerine büyük (big_)
+# görselin URL'si thumbUrl alanına yazılıyordu. Artık haber7'nin kendi
+# small_/big_ konvansiyonuna güveniliyor; tek kontrol linkin canlı ve
+# gerçekten bir görsel olduğu.
+def url_exists(session: requests.Session, url: str) -> bool:
     try:
         response = session.head(url, timeout=10, allow_redirects=True)
         if response.status_code != 200:
             return False
         content_type = response.headers.get("Content-Type", "").lower()
-        if not content_type.startswith("image/"):
-            return False
-        content_length = response.headers.get("Content-Length")
-        if content_length and int(content_length) < min_size_bytes:
-            return False
-        return True
+        return content_type.startswith("image/")
     except requests.RequestException:
         return False
 
@@ -98,7 +100,7 @@ def fetch_slider_data(session: requests.Session) -> Dict[str, str]:
     'slug' -> 'thumb_url' eşleşmelerini çıkarır.
     """
     url = "https://www.haber7.com/"
-    
+
     try:
         response = session.get(url, timeout=15)
         response.raise_for_status()
@@ -108,7 +110,7 @@ def fetch_slider_data(session: requests.Session) -> Dict[str, str]:
 
     soup = BeautifulSoup(response.text, "html.parser")
     slider = soup.find("div", class_="newspaper-slider")
-    
+
     slider_data = {}
     if not slider:
         logger.error("HTML yapısında 'newspaper-slider' div'i bulunamadı.")
@@ -118,10 +120,10 @@ def fetch_slider_data(session: requests.Session) -> Dict[str, str]:
         href = a_tag.get("href", "")
         if not href:
             continue
-            
+
         slug = href.rstrip("/").split("/")[-1]
         img_tag = a_tag.find("img")
-        
+
         if img_tag:
             # Sırasıyla iletilen çıktıdaki muhtemel öznitelikler kontrol ediliyor.
             img_url = img_tag.get("data-original") or img_tag.get("data-lazy") or img_tag.get("src")
@@ -133,8 +135,10 @@ def fetch_slider_data(session: requests.Session) -> Dict[str, str]:
 # --- 6. İŞ MANTIĞI VE DOĞRULAMA ---
 def process_gazete(gazete: dict, raw_url: str, session: requests.Session) -> Optional[GazeteManseti]:
     """
-    Toplanan raw_url (genellikle small_) üzerinden thumb ve big url'leri oluşturur,
-    HEAD isteği ile varlıklarını asenkron doğrular.
+    Slider'dan gelen raw_url üzerinden thumb ve big url'leri türetir.
+    İkisi de canlıysa gazeteyi ekler; biri bile erişilemezse gazete tamamen
+    atlanır (eski koddaki gibi thumbUrl/todayUrl'ü birbirinin yerine
+    "swap" edip yanlış eşleşme üretmek yerine).
     """
     if "small_" in raw_url:
         thumb_url = raw_url
@@ -143,23 +147,21 @@ def process_gazete(gazete: dict, raw_url: str, session: requests.Session) -> Opt
         big_url = raw_url
         thumb_url = raw_url.replace("/big_", "/small_")
 
-    is_thumb_valid = check_image_url(session, thumb_url)
-    is_big_valid = check_image_url(session, big_url)
+    if not url_exists(session, thumb_url):
+        logger.warning(f"thumb_url erişilemez, atlanıyor: {gazete['name']} — {thumb_url}")
+        return None
 
-    final_thumb = thumb_url if is_thumb_valid else (big_url if is_big_valid else None)
-    final_big = big_url if is_big_valid else (thumb_url if is_thumb_valid else None)
-
-    if not final_thumb or not final_big:
-        logger.warning(f"Görseller doğrulanamadı, atlanıyor: {gazete['name']}")
+    if not url_exists(session, big_url):
+        logger.warning(f"big_url erişilemez, atlanıyor: {gazete['name']} — {big_url}")
         return None
 
     logger.info(f"✅ Başarılı: {gazete['name']}")
-    
+
     return GazeteManseti(
         id=gazete["id"],
         name=gazete["name"],
-        todayUrl=final_big,
-        thumbUrl=final_thumb,
+        todayUrl=big_url,
+        thumbUrl=thumb_url,
         webAdresi=gazete["link"]
     )
 
@@ -167,7 +169,7 @@ def process_gazete(gazete: dict, raw_url: str, session: requests.Session) -> Opt
 def main():
     session = get_session()
     logger.info("Ana kaynaktan (Slider) manşet verileri toplanıyor...")
-    
+
     # 1. Aşama: Tek GET isteği ile tüm HTML parse işlemi
     slider_data = fetch_slider_data(session)
 
@@ -176,7 +178,7 @@ def main():
         return
 
     logger.info(f"{len(slider_data)} adet manşet tespit edildi. Görseller doğrulanıyor (Asenkron HEAD)...")
-    
+
     sonuclar: List[dict] = []
     max_workers = min(20, len(GAZETELER))
 
