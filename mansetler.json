@@ -35,6 +35,13 @@
         "webAdresi": "https://www.dunya.com"
     },
     {
+        "id": "manset_fotomac",
+        "name": "Fotomaç",
+        "todayUrl": "https://i13.haber7.net/haber7/gazete/fotomac/big_130826_0800.jpg",
+        "thumbUrl": "https://i13.haber7.net/haber7/gazete/fotomac/small_130826_0800.jpg",
+        "webAdresi": "https://www.fotomac.com.tr"
+    },
+    {
         "id": "manset_hurriyet",
         "name": "Hürriyet",
         "todayUrl": "https://i13.haber7.net/haber7/gazete/hurriyet/big_130826_0800.jpg",
