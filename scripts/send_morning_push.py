@@ -44,7 +44,11 @@ def get_morning_body(now_tr: datetime) -> str | None:
         return None
 
     items = data.get("items")
-    if isinstance(items, list) and items and isinstance(items[0], dict):
+    if not isinstance(items, list) or len(items) == 0:
+        print("::warning::Özet maddeleri boş, bildirim atlandı.")
+        return None
+
+    if isinstance(items[0], dict):
         first_title = str(items[0].get("title", "")).strip()
         if first_title:
             return truncate_text(first_title, 100)
