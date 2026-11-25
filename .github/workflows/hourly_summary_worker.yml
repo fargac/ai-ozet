@@ -27,6 +27,7 @@ jobs:
 
       - name: FFmpeg Kur
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Kutuphaneleri Yukle
         run: |
           python -m pip install --upgrade pip
@@ -40,7 +41,7 @@ jobs:
 
       - name: Saatlik Ozeti Hazirla
         env:
-          PYTHONUNBUFFERED: "1" 
+          PYTHONUNBUFFERED: "1"
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_APPLICATION_CREDENTIALS: gcp_auth.json # Python kütüphanesi bu env değerini otomatik okur
         run: python scripts/hourly_summary.py
@@ -88,3 +89,11 @@ jobs:
                -H "Authorization: Bearer ${{ secrets.CF_PURGE_TOKEN }}" \
                -H "Content-Type: application/json" \
                --data '{"purge_everything": true}'
+
+      - name: Sabah Push
+        if: hashFiles('cdn_data/summaries/.upload_ready') != ''
+        continue-on-error: true
+        env:
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+          PUSH_TOPIC: daily_summary_test
+        run: python scripts/send_morning_push.py

@@ -7,3 +7,4 @@ pydantic
 rapidfuzz
 google-cloud-texttospeech
 imageio-ffmpeg
+firebase-admin
