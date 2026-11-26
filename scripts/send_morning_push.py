@@ -20,6 +20,31 @@ def truncate_text(text: str, limit: int = 100) -> str:
     return text[:limit].rsplit(" ", 1)[0] + "…"
 
 
+def build_push_body(items: list) -> str:
+    titles = [
+        str(item.get("title", "")).strip()
+        for item in items
+        if isinstance(item, dict) and str(item.get("title", "")).strip()
+    ]
+
+    if not titles:
+        return FALLBACK_BODY
+
+    if len(titles) == 1:
+        return truncate_text(titles[0], 110)
+
+    remaining = len(titles) - 2
+    suffix = f" (+{remaining} gelişme)" if remaining > 0 else ""
+
+    combined_full = f"{titles[0]} • {titles[1]}{suffix}"
+    if len(combined_full) <= 115:
+        return combined_full
+
+    first = truncate_text(titles[0], 46)
+    second = truncate_text(titles[1], 46)
+    return f"{first} • {second}{suffix}"
+
+
 def get_morning_body(now_tr: datetime) -> str | None:
     if not os.path.exists(SUMMARY_PATH):
         print(f"::warning::{SUMMARY_PATH} bulunamadı, bildirim atlandı.")
@@ -48,12 +73,7 @@ def get_morning_body(now_tr: datetime) -> str | None:
         print("::warning::Özet maddeleri boş, bildirim atlandı.")
         return None
 
-    if isinstance(items[0], dict):
-        first_title = str(items[0].get("title", "")).strip()
-        if first_title:
-            return truncate_text(first_title, 100)
-
-    return FALLBACK_BODY
+    return build_push_body(items)
 
 
 def main():
